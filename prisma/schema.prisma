@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String     @id @default(cuid())
+  name          String?
+  email         String     @unique
+  password      String
+  role          String     @default("CUSTOMER")
+  restaurantId  String?
+  restaurant    Restaurant? @relation(fields: [restaurantId], references: [id])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Restaurant {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String     @unique
+  description  String?
+  logo         String?
+  address      String?
+  phone        String?
+  email        String?
+  openingHours String?
+  upiId        String?
+  isActive     Boolean    @default(true)
+  categories   Category[]
+  orders       Order[]
+  staff        User[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  description  String?
+  displayOrder Int        @default(0)
+  isActive     Boolean    @default(true)
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  menuItems    MenuItem[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model MenuItem {
+  id           String      @id @default(cuid())
+  name         String
+  description  String?
+  price        Float
+  image        String?
+  isAvailable  Boolean     @default(true)
+  prepTime     Int         @default(10)
+  displayOrder Int         @default(0)
+  categoryId   String
+  category     Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems   OrderItem[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  orderNumber     String
+  status          String      @default("PENDING")
+  subtotal        Float       @default(0)
+  tax             Float       @default(0)
+  total           Float
+  customerName    String
+  customerEmail   String?
+  customerPhone   String?
+  notes           String?
+  paymentMethod   String?     @default("CASH")
+  paymentStatus   String      @default("PENDING")
+  paymentId       String?
+  razorpayOrderId String?
+  restaurantId    String
+  restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  items           OrderItem[]
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId   String
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemName String
+  quantity     Int
+  price        Float
+  notes        String?
+  createdAt    DateTime @default(now())
+}

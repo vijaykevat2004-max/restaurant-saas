@@ -8,7 +8,6 @@ interface Category { id: string; name: string; menuItems: MenuItem[] }
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
-  const [debug, setDebug] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [editing, setEditing] = useState<MenuItem | null>(null)
@@ -20,22 +19,17 @@ export default function MenuPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { loadData() }, [])
-  
-  useEffect(() => { console.log('Categories updated:', categories) }, [categories])
 
   async function loadData() {
     try {
       const res = await fetch('/api/menu')
       const data = await res.json()
-      setDebug({ apiStatus: res.status, data })
-      console.log('Menu API response:', res.status, data)
       if (!res.ok) {
         window.alert('Error: ' + (data.error || 'Failed to load menu'))
       }
       setCategories(data.categories || [])
     } catch (e) { 
       console.error(e)
-      setDebug({ error: String(e) })
     }
     setLoading(false)
   }
@@ -88,9 +82,6 @@ export default function MenuPage() {
       window.alert('Please select a category from the dropdown')
       return
     }
-    
-    console.log('Saving item:', { name: form.name, price, categoryId: form.categoryId })
-    setDebug({ saving: true, form: { name: form.name, price, categoryId: form.categoryId } })
     
     let imageUrl = imagePreview
     if (imageFile) {
@@ -172,13 +163,6 @@ export default function MenuPage() {
       <div style={{padding: 24, maxWidth: 1200, margin: '0 auto'}}>
         <h1 style={{fontSize: 28, fontWeight: 'bold', marginBottom: 8}}>Menu Management</h1>
         <p style={{color: '#666', marginBottom: 24}}>Manage your restaurant menu</p>
-        
-        {/* Debug Info */}
-        {debug && (
-          <div style={{background: '#f0f0f0', padding: 16, marginBottom: 16, borderRadius: 8, fontSize: 12}}>
-            <strong>Debug:</strong> {JSON.stringify(debug)}
-          </div>
-        )}
         
         <div style={{display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap'}}>
           <button onClick={handleAddCategory} style={{background: '#8b5cf6', color: 'white', padding: '12px 24px', borderRadius: 8, fontSize: 14, cursor: 'pointer', border: 'none', fontWeight: 'bold'}}>+ Add Category</button>

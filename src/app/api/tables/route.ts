@@ -74,6 +74,37 @@ export async function POST(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await auth()
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return NextResponse.json({ error: 'Table ID required' }, { status: 400 })
+    }
+
+    const body = await req.json()
+    
+    const table = await prisma.table.update({
+      where: { id },
+      data: {
+        name: body.name
+      }
+    })
+
+    return NextResponse.json({ table })
+  } catch (error) {
+    console.error('Failed to update table:', error)
+    return NextResponse.json({ error: 'Failed to update table' }, { status: 500 })
+  }
+}
+
 export async function DELETE(req: NextRequest) {
   try {
     const session = await auth()

@@ -196,6 +196,7 @@ export default function AdminPage() {
           <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Quick Actions</h2>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link href="/menu" style={{ background: '#f97316', color: 'white', padding: '14px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 'bold' }}>🍔 Manage Menu</Link>
+            <Link href="/tables" style={{ background: '#f59e0b', color: 'white', padding: '14px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 'bold' }}>🪑 Manage Tables</Link>
             <Link href="/orders" style={{ background: '#3b82f6', color: 'white', padding: '14px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 'bold' }}>📋 View Orders</Link>
             <Link href="/kitchen" style={{ background: '#22c55e', color: 'white', padding: '14px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 'bold' }}>👨‍🍳 Kitchen Display</Link>
             <Link href="/staff" style={{ background: '#8b5cf6', color: 'white', padding: '14px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 'bold' }}>👥 Staff</Link>

@@ -21,6 +21,7 @@ interface Table {
   id: string
   number: number
   name: string
+  isAvailable: boolean
 }
 
 export default function CartPageClient({ restaurant }: { restaurant: Restaurant }) {
@@ -301,18 +302,21 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
                 {tables.map(table => (
                   <button
                     key={table.id}
-                    onClick={() => setSelectedTable(table)}
+                    onClick={() => table.isAvailable && setSelectedTable(table)}
+                    disabled={!table.isAvailable}
                     style={{
                       padding: 12,
                       borderRadius: 10,
-                      border: selectedTable?.id === table.id ? '2px solid #4caf50' : '2px solid #ddd',
-                      background: selectedTable?.id === table.id ? '#e8f5e9' : '#fff',
-                      cursor: 'pointer',
-                      fontWeight: 'bold'
+                      border: selectedTable?.id === table.id ? '3px solid #4caf50' : table.isAvailable ? '2px solid #ddd' : '2px solid #ef4444',
+                      background: selectedTable?.id === table.id ? '#e8f5e9' : table.isAvailable ? '#fff' : '#f5f5f5',
+                      cursor: table.isAvailable ? 'pointer' : 'not-allowed',
+                      fontWeight: 'bold',
+                      opacity: table.isAvailable ? 1 : 0.6
                     }}
                   >
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>🪑</div>
-                    <div style={{ fontSize: 14, color: '#333' }}>{table.name || `Table ${table.number}`}</div>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>{table.isAvailable ? '🪑' : '🔴'}</div>
+                    <div style={{ fontSize: 14, color: table.isAvailable ? '#333' : '#999' }}>{table.name || `Table ${table.number}`}</div>
+                    {!table.isAvailable && <div style={{ fontSize: 10, color: '#ef4444', marginTop: 2 }}>Occupied</div>}
                   </button>
                 ))}
               </div>

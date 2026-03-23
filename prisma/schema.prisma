@@ -34,8 +34,19 @@ model Restaurant {
   categories   Category[]
   orders       Order[]
   staff        User[]
+  tables       Table[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+}
+
+model Table {
+  id           String     @id @default(cuid())
+  number       Int
+  name         String?
+  restaurantId String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  orders       Order[]
+  createdAt    DateTime   @default(now())
 }
 
 model Category {
@@ -71,6 +82,9 @@ model Order {
   id              String      @id @default(cuid())
   orderNumber     String
   status          String      @default("PENDING")
+  orderType       String      @default("TAKEAWAY")
+  tableId         String?
+  tableName       String?
   subtotal        Float       @default(0)
   tax             Float       @default(0)
   total           Float
@@ -78,12 +92,15 @@ model Order {
   customerEmail   String?
   customerPhone   String?
   notes           String?
-  paymentMethod   String?     @default("CASH")
+  paymentMethod   String?     @default("ONLINE")
   paymentStatus   String      @default("PENDING")
   paymentId       String?
   razorpayOrderId String?
+  cashReceived   Float?
+  cashChange     Float?
   restaurantId    String
   restaurant      Restaurant  @relation(fields: [restaurantId], references: [id])
+  table           Table?      @relation(fields: [tableId], references: [id])
   items           OrderItem[]
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt

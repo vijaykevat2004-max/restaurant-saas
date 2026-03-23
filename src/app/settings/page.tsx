@@ -120,7 +120,15 @@ export default function SettingsPage() {
         <p style={{color: '#666', marginBottom: 32}}>Manage your restaurant settings</p>
 
         {message && (
-          <div style={{background: message.includes('success') || message.includes('UPI') ? '#dcfce7' : '#fef2f2', color: message.includes('success') || message.includes('UPI') ? '#166534' : '#dc2626', padding: 14, borderRadius: 12, marginBottom: 20, textAlign: 'center', fontWeight: 'bold'}>
+          <div style={{
+            background: message.includes('success') || message.includes('UPI') ? '#dcfce7' : '#fef2f2', 
+            color: message.includes('success') || message.includes('UPI') ? '#166534' : '#dc2626', 
+            padding: 14, 
+            borderRadius: 12, 
+            marginBottom: 20, 
+            textAlign: 'center', 
+            fontWeight: 'bold'
+          }}>
             {message}
           </div>
         )}

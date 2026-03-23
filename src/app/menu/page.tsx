@@ -8,6 +8,7 @@ interface Category { id: string; name: string; menuItems: MenuItem[] }
 export default function MenuPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
+  const [debug, setDebug] = useState<any>(null)
   const [showModal, setShowModal] = useState(false)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [editing, setEditing] = useState<MenuItem | null>(null)
@@ -19,13 +20,23 @@ export default function MenuPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { loadData() }, [])
+  
+  useEffect(() => { console.log('Categories updated:', categories) }, [categories])
 
   async function loadData() {
     try {
       const res = await fetch('/api/menu')
       const data = await res.json()
+      setDebug({ apiStatus: res.status, data })
+      console.log('Menu API response:', res.status, data)
+      if (!res.ok) {
+        window.alert('Error: ' + (data.error || 'Failed to load menu'))
+      }
       setCategories(data.categories || [])
-    } catch (e) { console.error(e) }
+    } catch (e) { 
+      console.error(e)
+      setDebug({ error: String(e) })
+    }
     setLoading(false)
   }
 
@@ -69,7 +80,17 @@ export default function MenuPage() {
 
   async function handleSave() {
     const price = parseFloat(form.price)
-    if (!form.name || !form.price || !form.categoryId) { window.alert('Please fill all fields'); return }
+    if (!form.name || !form.price) { 
+      window.alert('Please fill name and price')
+      return 
+    }
+    if (!form.categoryId) {
+      window.alert('Please select a category from the dropdown')
+      return
+    }
+    
+    console.log('Saving item:', { name: form.name, price, categoryId: form.categoryId })
+    setDebug({ saving: true, form: { name: form.name, price, categoryId: form.categoryId } })
     
     let imageUrl = imagePreview
     if (imageFile) {
@@ -82,13 +103,42 @@ export default function MenuPage() {
       }
     }
 
-    if (editing) {
-      await fetch('/api/menu/' + editing.id, {method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: form.name, description: form.description, price, image: imageUrl || null})})
-    } else {
-      await fetch('/api/menu', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: form.name, description: form.description, price, image: imageUrl || null, categoryId: form.categoryId})})
+    try {
+      if (editing) {
+        const res = await fetch('/api/menu/' + editing.id, {method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: form.name, description: form.description, price, image: imageUrl || null})})
+        if (!res.ok) {
+          const data = await res.json()
+          window.alert('Error updating: ' + (data.error || 'Failed'))
+          return
+        }
+        window.alert('Item updated successfully!')
+      } else {
+        const res = await fetch('/api/menu', {
+          method: 'POST', 
+          headers: {'Content-Type':'application/json'}, 
+          body: JSON.stringify({
+            name: form.name, 
+            description: form.description, 
+            price, 
+            image: imageUrl || null, 
+            categoryId: form.categoryId
+          })
+        })
+        const data = await res.json()
+        console.log('Add item response:', res.status, data)
+        
+        if (!res.ok) {
+          window.alert('Error adding: ' + (data.error || 'Failed') + ' (Status: ' + res.status + ')')
+          return
+        }
+        window.alert('Item added successfully!')
+      }
+      setShowModal(false)
+      loadData()
+    } catch (e) {
+      console.error('Error:', e)
+      window.alert('Something went wrong: ' + e)
     }
-    setShowModal(false)
-    loadData()
   }
 
   async function handleSaveCategory() {
@@ -122,6 +172,13 @@ export default function MenuPage() {
       <div style={{padding: 24, maxWidth: 1200, margin: '0 auto'}}>
         <h1 style={{fontSize: 28, fontWeight: 'bold', marginBottom: 8}}>Menu Management</h1>
         <p style={{color: '#666', marginBottom: 24}}>Manage your restaurant menu</p>
+        
+        {/* Debug Info */}
+        {debug && (
+          <div style={{background: '#f0f0f0', padding: 16, marginBottom: 16, borderRadius: 8, fontSize: 12}}>
+            <strong>Debug:</strong> {JSON.stringify(debug)}
+          </div>
+        )}
         
         <div style={{display: 'flex', gap: 12, marginBottom: 24, flexWrap: 'wrap'}}>
           <button onClick={handleAddCategory} style={{background: '#8b5cf6', color: 'white', padding: '12px 24px', borderRadius: 8, fontSize: 14, cursor: 'pointer', border: 'none', fontWeight: 'bold'}}>+ Add Category</button>

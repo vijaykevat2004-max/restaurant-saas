@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const restaurantId = session?.user?.restaurantId as string | null
     
     let where: Record<string, unknown> = {
-      status: { in: ['PENDING', 'PREPARING', 'READY'] }
+      status: { in: ['PENDING', 'PREPARING', 'READY', 'AWAITING_CASH'] }
     }
     
     if (restaurantId) {

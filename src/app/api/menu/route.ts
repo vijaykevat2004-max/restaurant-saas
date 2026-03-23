@@ -50,3 +50,40 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to fetch menu' }, { status: 500 })
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await auth()
+    
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    
+    const restaurantId = session?.user?.restaurantId as string | null
+
+    if (!restaurantId) {
+      return NextResponse.json({ error: 'No restaurant' }, { status: 400 })
+    }
+
+    const { name, description, price, image, categoryId } = await req.json()
+
+    if (!name || !price || !categoryId) {
+      return NextResponse.json({ error: 'Name, price, and category required' }, { status: 400 })
+    }
+
+    const menuItem = await prisma.menuItem.create({
+      data: {
+        name,
+        description: description || null,
+        price: parseFloat(price),
+        image: image || null,
+        categoryId,
+      }
+    })
+
+    return NextResponse.json({ menuItem }, { status: 201 })
+  } catch (error) {
+    console.error('Failed to create menu item:', error)
+    return NextResponse.json({ error: 'Failed to create menu item' }, { status: 500 })
+  }
+}

@@ -87,17 +87,30 @@ export default function SettingsPage() {
     setSaving(true)
     setMessage('')
     
+    if (!form.name.trim()) {
+      setMessage('Please enter restaurant name')
+      setSaving(false)
+      setTimeout(() => { setMessage('') }, 3000)
+      return
+    }
+    
     try {
+      const method = restaurant ? 'PATCH' : 'POST'
       const res = await fetch('/api/restaurant', {
-        method: 'PATCH',
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form)
       })
       
       if (res.ok) {
+        const data = await res.json()
+        if (!restaurant) {
+          setRestaurant(data.restaurant)
+        }
         setMessage('Settings saved successfully!')
       } else {
-        setMessage('Failed to save settings')
+        const data = await res.json()
+        setMessage('Error: ' + (data.error || 'Failed to save'))
       }
     } catch (e) {
       setMessage('Error saving settings')

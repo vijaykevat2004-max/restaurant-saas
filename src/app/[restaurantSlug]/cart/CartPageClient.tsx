@@ -17,6 +17,12 @@ interface Restaurant {
   logo: string | null
 }
 
+interface Table {
+  id: string
+  number: number
+  name: string
+}
+
 export default function CartPageClient({ restaurant }: { restaurant: Restaurant }) {
   const [cart, setCart] = useState<CartItem[]>([])
   const [customerName, setCustomerName] = useState('')
@@ -27,11 +33,29 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   const [showSuccess, setShowSuccess] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [orderTotal, setOrderTotal] = useState(0)
+  const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY'>('TAKEAWAY')
+  const [tables, setTables] = useState<Table[]>([])
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null)
+  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'CASH'>('UPI')
+  const [loadingTables, setLoadingTables] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem(`cart_${restaurant.slug}`)
     if (saved) setCart(JSON.parse(saved))
   }, [restaurant.slug])
+
+  useEffect(() => {
+    if (orderType === 'DINE_IN') {
+      setLoadingTables(true)
+      fetch(`/api/public/tables?slug=${restaurant.slug}`)
+        .then(r => r.json())
+        .then(d => {
+          setTables(d.tables || [])
+          setLoadingTables(false)
+        })
+        .catch(() => setLoadingTables(false))
+    }
+  }, [orderType, restaurant.slug])
 
   const updateQty = (id: string, delta: number) => {
     const updated = cart.map(item => {
@@ -66,6 +90,10 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       window.alert('Please enter your name and phone number')
       return
     }
+    if (orderType === 'DINE_IN' && !selectedTable) {
+      window.alert('Please select a table for dine-in')
+      return
+    }
 
     setPlacing(true)
     try {
@@ -84,7 +112,10 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
             price: item.price, 
             quantity: item.qty 
           })),
-          paymentMethod: 'UPI'
+          paymentMethod: paymentMethod === 'CASH' ? 'CASH' : 'ONLINE',
+          orderType,
+          tableId: selectedTable?.id || null,
+          tableName: selectedTable?.name || selectedTable ? `Table ${selectedTable.number}` : null
         })
       })
 
@@ -99,11 +130,13 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       setOrderNumber(data.order.orderNumber)
       setOrderTotal(data.order.total)
       
-      await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: data.order.id, verified: true })
-      })
+      if (paymentMethod === 'UPI') {
+        await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: data.order.id, verified: true })
+        })
+      }
 
       clearCart()
       setShowSuccess(true)
@@ -219,6 +252,115 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
             <span style={{ color: '#d32f2f' }}>₹{total}</span>
           </div>
         </div>
+
+        {/* Order Type Selection */}
+        <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+          <h3 style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#333' }}>Order Type</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <button 
+              onClick={() => { setOrderType('TAKEAWAY'); setSelectedTable(null); }}
+              style={{ 
+                padding: 14, 
+                borderRadius: 10, 
+                border: orderType === 'TAKEAWAY' ? '2px solid #d32f2f' : '2px solid #ddd',
+                background: orderType === 'TAKEAWAY' ? '#fff5f5' : '#fff',
+                cursor: 'pointer',
+                fontWeight: orderType === 'TAKEAWAY' ? 'bold' : 'normal'
+              }}
+            >
+              <div style={{ fontSize: 24, marginBottom: 4 }}>🥡</div>
+              <div style={{ fontSize: 14, color: '#333' }}>Takeaway</div>
+            </button>
+            <button 
+              onClick={() => setOrderType('DINE_IN')}
+              style={{ 
+                padding: 14, 
+                borderRadius: 10, 
+                border: orderType === 'DINE_IN' ? '2px solid #d32f2f' : '2px solid #ddd',
+                background: orderType === 'DINE_IN' ? '#fff5f5' : '#fff',
+                cursor: 'pointer',
+                fontWeight: orderType === 'DINE_IN' ? 'bold' : 'normal'
+              }}
+            >
+              <div style={{ fontSize: 24, marginBottom: 4 }}>🍽️</div>
+              <div style={{ fontSize: 14, color: '#333' }}>Dine In</div>
+            </button>
+          </div>
+        </div>
+
+        {/* Table Selection for Dine-in */}
+        {orderType === 'DINE_IN' && (
+          <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#333' }}>Select Your Table</h3>
+            {loadingTables ? (
+              <div style={{ textAlign: 'center', padding: 20, color: '#666' }}>Loading tables...</div>
+            ) : tables.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: 20, color: '#d32f2f' }}>No tables available. Please select Takeaway.</div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 }}>
+                {tables.map(table => (
+                  <button
+                    key={table.id}
+                    onClick={() => setSelectedTable(table)}
+                    style={{
+                      padding: 12,
+                      borderRadius: 10,
+                      border: selectedTable?.id === table.id ? '2px solid #4caf50' : '2px solid #ddd',
+                      background: selectedTable?.id === table.id ? '#e8f5e9' : '#fff',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
+                    }}
+                  >
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>🪑</div>
+                    <div style={{ fontSize: 14, color: '#333' }}>{table.name || `Table ${table.number}`}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Payment Method for Dine-in */}
+        {orderType === 'DINE_IN' && selectedTable && (
+          <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>
+            <h3 style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 12, color: '#333' }}>Payment Method</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button 
+                onClick={() => setPaymentMethod('UPI')}
+                style={{ 
+                  padding: 14, 
+                  borderRadius: 10, 
+                  border: paymentMethod === 'UPI' ? '2px solid #d32f2f' : '2px solid #ddd',
+                  background: paymentMethod === 'UPI' ? '#fff5f5' : '#fff',
+                  cursor: 'pointer',
+                  fontWeight: paymentMethod === 'UPI' ? 'bold' : 'normal'
+                }}
+              >
+                <div style={{ fontSize: 24, marginBottom: 4 }}>📱</div>
+                <div style={{ fontSize: 14, color: '#333' }}>UPI / Online</div>
+              </button>
+              <button 
+                onClick={() => setPaymentMethod('CASH')}
+                style={{ 
+                  padding: 14, 
+                  borderRadius: 10, 
+                  border: paymentMethod === 'CASH' ? '2px solid #d32f2f' : '2px solid #ddd',
+                  background: paymentMethod === 'CASH' ? '#fff5f5' : '#fff',
+                  cursor: 'pointer',
+                  fontWeight: paymentMethod === 'CASH' ? 'bold' : 'normal'
+                }}
+              >
+                <div style={{ fontSize: 24, marginBottom: 4 }}>💵</div>
+                <div style={{ fontSize: 14, color: '#333' }}>Cash</div>
+              </button>
+            </div>
+            {paymentMethod === 'CASH' && (
+              <div style={{ marginTop: 12, padding: 12, background: '#fff3cd', borderRadius: 8, fontSize: 13, color: '#856404' }}>
+                Pay ₹{total} at the counter when your order is ready.
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Customer Details */}
         <div style={{ background: '#fff', borderRadius: 12, padding: 16, marginBottom: 16, boxShadow: '0 1px 3px rgba(0,0,0,0.08)' }}>

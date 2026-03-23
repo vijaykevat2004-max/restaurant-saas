@@ -43,7 +43,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
 
     const { id } = await params
-    const { status } = await req.json()
+    const { status, cashReceived, cashChange, paymentStatus } = await req.json()
 
     const order = await prisma.order.findUnique({
       where: { id },
@@ -53,9 +53,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
+    const updateData: Record<string, unknown> = { status }
+    if (cashReceived !== undefined) updateData.cashReceived = cashReceived
+    if (cashChange !== undefined) updateData.cashChange = cashChange
+    if (paymentStatus) updateData.paymentStatus = paymentStatus
+
     const updatedOrder = await prisma.order.update({
       where: { id },
-      data: { status },
+      data: updateData,
       include: {
         items: true,
       },

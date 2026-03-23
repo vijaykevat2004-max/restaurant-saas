@@ -33,6 +33,7 @@ export default function CustomerMenuClient({ restaurant }: { restaurant: Restaur
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [addingItem, setAddingItem] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
+  const [showCart, setShowCart] = useState(false)
 
   useEffect(() => {
     const saved = localStorage.getItem(`cart_${restaurant.slug}`)
@@ -41,7 +42,7 @@ export default function CustomerMenuClient({ restaurant }: { restaurant: Restaur
 
   const addToCart = (item: MenuItem) => {
     setAddingItem(item.id)
-    setTimeout(() => setAddingItem(null), 500)
+    setTimeout(() => setAddingItem(null), 600)
     
     const existing = cart.find(c => c.id === item.id)
     let newCart
@@ -68,247 +69,261 @@ export default function CustomerMenuClient({ restaurant }: { restaurant: Restaur
       )
     : filteredItems
 
+  const getCategoryIcon = (name: string) => {
+    const lower = name.toLowerCase()
+    if (lower.includes('burger')) return '🍔'
+    if (lower.includes('pizza')) return '🍕'
+    if (lower.includes('drink') || lower.includes('beverage')) return '🥤'
+    if (lower.includes('dessert') || lower.includes('sweet')) return '🍰'
+    if (lower.includes('coffee') || lower.includes('tea')) return '☕'
+    if (lower.includes('ice') || lower.includes('shake')) return '🍨'
+    if (lower.includes('side') || lower.includes('fries')) return '🍟'
+    if (lower.includes('combo')) return '🍱'
+    return '🍽️'
+  }
+
   return (
-    <div style={{ minHeight: '100vh', background: '#fff', paddingBottom: 100 }}>
-      {/* Hero Header */}
+    <div style={{ minHeight: '100vh', background: '#fff', paddingBottom: 100, fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      {/* Header */}
       <div style={{ 
-        background: 'linear-gradient(135deg, #ff6b35 0%, #ff8c42 50%, #ffa726 100%)',
-        minHeight: 200,
-        position: 'relative',
-        overflow: 'hidden'
+        background: '#fff',
+        borderBottom: '3px solid #d32f2f',
+        position: 'sticky',
+        top: 0,
+        zIndex: 100,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: 0, left: 0, right: 0, bottom: 0,
-          background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-        }} />
-        
-        <div style={{ position: 'relative', padding: 24, textAlign: 'center', color: 'white' }}>
-          {restaurant.logo ? (
-            <img 
-              src={restaurant.logo} 
-              alt={restaurant.name} 
-              style={{ 
-                width: 80, 
-                height: 80, 
-                borderRadius: '50%', 
-                border: '4px solid white',
-                objectFit: 'cover',
-                marginBottom: 12,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-              }} 
-            />
-          ) : (
-            <div style={{
-              width: 80, height: 80, borderRadius: '50%', background: 'white',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              margin: '0 auto 12px', fontSize: 36, boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-            }}>🍔</div>
-          )}
-          <h1 style={{ fontSize: 28, fontWeight: 'bold', margin: 0, textShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
-            {restaurant.name}
-          </h1>
-          <p style={{ fontSize: 14, opacity: 0.95, marginTop: 4 }}>
-            {restaurant.address || 'Delicious food delivered to you'}
-          </p>
-          
-          {/* Info badges */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 16, flexWrap: 'wrap' }}>
-            {restaurant.openingHours && (
-              <div style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 20, fontSize: 12, backdropFilter: 'blur(10px)' }}>
-                🕐 {restaurant.openingHours}
+        <div style={{ maxWidth: 768, margin: '0 auto', padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {restaurant.logo ? (
+              <img src={restaurant.logo} alt={restaurant.name} style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover' }} />
+            ) : (
+              <div style={{ width: 44, height: 44, borderRadius: 8, background: '#d32f2f', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold', fontSize: 20 }}>
+                {restaurant.name.charAt(0)}
               </div>
             )}
+            <div>
+              <h1 style={{ margin: 0, fontSize: 18, fontWeight: 'bold', color: '#333' }}>{restaurant.name}</h1>
+              {restaurant.address && <p style={{ margin: 0, fontSize: 11, color: '#666' }}>{restaurant.address}</p>}
+            </div>
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {restaurant.phone && (
-              <a href={`tel:${restaurant.phone}`} style={{ background: 'rgba(255,255,255,0.2)', padding: '6px 14px', borderRadius: 20, fontSize: 12, color: 'white', textDecoration: 'none', backdropFilter: 'blur(10px)' }}>
-                📞 {restaurant.phone}
+              <a href={`tel:${restaurant.phone}`} style={{ width: 40, height: 40, borderRadius: '50%', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', color: '#333' }}>
+                📞
               </a>
+            )}
+            <Link href={`/${restaurant.slug}/cart`} style={{ 
+              width: 44, height: 44, borderRadius: '50%', 
+              background: '#d32f2f', 
+              display: 'flex', alignItems: 'center', justifyContent: 'center', 
+              textDecoration: 'none', position: 'relative'
+            }}>
+              🛒
+              {cartCount > 0 && (
+                <span style={{
+                  position: 'absolute', top: -4, right: -4,
+                  background: '#ffeb3b', color: '#333',
+                  width: 20, height: 20, borderRadius: '50%',
+                  fontSize: 11, fontWeight: 'bold',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '2px solid #fff'
+                }}>
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          </div>
+        </div>
+        
+        {/* Info Bar */}
+        {restaurant.openingHours && (
+          <div style={{ background: '#fff3e0', padding: '8px 16px', textAlign: 'center', fontSize: 12, color: '#e65100', borderTop: '1px solid #ffe0b2' }}>
+            🕐 {restaurant.openingHours}
+          </div>
+        )}
+      </div>
+
+      {/* Search */}
+      <div style={{ padding: '12px 16px', background: '#fafafa', borderBottom: '1px solid #eee' }}>
+        <div style={{ maxWidth: 768, margin: '0 auto' }}>
+          <div style={{ 
+            background: '#fff', 
+            borderRadius: 8, 
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            border: '1px solid #ddd',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+          }}>
+            <span style={{ fontSize: 16, color: '#999' }}>🔍</span>
+            <input 
+              type="text"
+              placeholder="Search for items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{ flex: 1, border: 'none', fontSize: 15, outline: 'none', background: 'transparent' }}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: '#999' }}>✕</button>
             )}
           </div>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div style={{ padding: '16px 16px 0', position: 'sticky', top: 0, background: 'white', zIndex: 50 }}>
-        <div style={{ 
-          background: '#f5f5f5', 
-          borderRadius: 25, 
-          padding: '12px 20px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-        }}>
-          <span style={{ fontSize: 18 }}>🔍</span>
-          <input 
-            type="text"
-            placeholder="Search menu items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ 
-              flex: 1, 
-              border: 'none', 
-              background: 'transparent', 
-              fontSize: 16,
-              outline: 'none'
-            }}
-          />
-          {searchQuery && (
-            <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18 }}>✕</button>
-          )}
-        </div>
-      </div>
-
-      {/* Category Tabs */}
+      {/* Categories */}
       {categories.length > 1 && (
-        <div style={{ padding: '16px', overflowX: 'auto', whiteSpace: 'nowrap' }}>
-          <div style={{ display: 'inline-flex', gap: 8, paddingBottom: 4 }}>
+        <div style={{ padding: '12px 16px', overflowX: 'auto', background: '#fff' }}>
+          <div style={{ maxWidth: 768, margin: '0 auto', display: 'flex', gap: 8 }}>
             <button
               onClick={() => setSelectedCategory(null)}
               style={{
-                padding: '10px 18px',
-                borderRadius: 25,
+                padding: '8px 16px',
+                borderRadius: 20,
                 border: 'none',
                 cursor: 'pointer',
-                background: !selectedCategory ? '#ff6b35' : '#f0f0f0',
+                background: !selectedCategory ? '#d32f2f' : '#f5f5f5',
                 color: !selectedCategory ? 'white' : '#333',
-                fontWeight: 'bold',
-                fontSize: 14,
+                fontWeight: 600,
+                fontSize: 13,
                 whiteSpace: 'nowrap',
-                transition: 'all 0.2s'
+                minWidth: 80
               }}
             >
-              🥘 All Items
+              All
             </button>
             {categories.map(cat => (
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
                 style={{
-                  padding: '10px 18px',
-                  borderRadius: 25,
+                  padding: '8px 16px',
+                  borderRadius: 20,
                   border: 'none',
                   cursor: 'pointer',
-                  background: selectedCategory === cat.id ? '#ff6b35' : '#f0f0f0',
+                  background: selectedCategory === cat.id ? '#d32f2f' : '#f5f5f5',
                   color: selectedCategory === cat.id ? 'white' : '#333',
-                  fontWeight: 'bold',
-                  fontSize: 14,
+                  fontWeight: 600,
+                  fontSize: 13,
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.2s'
+                  minWidth: 80,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 4
                 }}
               >
-                {cat.name}
+                <span>{getCategoryIcon(cat.name)}</span>
+                <span>{cat.name}</span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* Menu Grid */}
-      <div style={{ padding: '0 16px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(165px, 1fr))', gap: 14 }}>
+      {/* Menu Items */}
+      <div style={{ padding: '16px', maxWidth: 768, margin: '0 auto' }}>
+        <h2 style={{ fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 12 }}>
+          {searchQuery ? `Search results for "${searchQuery}"` : (selectedCategory ? categories.find(c => c.id === selectedCategory)?.name : 'Popular Items')}
+        </h2>
+        
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {searchedItems.map(item => (
             <div key={item.id} style={{ 
-              background: 'white', 
-              borderRadius: 16, 
+              background: '#fff', 
+              borderRadius: 12, 
               overflow: 'hidden', 
-              boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-              border: '1px solid #f0f0f0',
-              transition: 'transform 0.2s, box-shadow 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.12)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,0,0,0.08)'
-            }}
-            >
-              <div style={{ height: 130, background: '#fafafa', position: 'relative', overflow: 'hidden' }}>
+              boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+              border: '1px solid #eee',
+              display: 'flex',
+              transition: 'all 0.2s'
+            }}>
+              <div style={{ width: 100, height: 100, flexShrink: 0, background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {item.image ? (
                   <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 ) : (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #fff5f0 0%, #fff0e8 100%)' }}>
-                    <span style={{ fontSize: 50 }}>🍽️</span>
-                  </div>
-                )}
-                {addingItem === item.id && (
-                  <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(34,197,94,0.9)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontWeight: 'bold', fontSize: 16
-                  }}>
-                    ✓ Added!
-                  </div>
+                  <span style={{ fontSize: 40 }}>{getCategoryIcon(item.name)}</span>
                 )}
               </div>
-              <div style={{ padding: 12 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 'bold', marginBottom: 4, lineHeight: 1.2, color: '#333' }}>{item.name}</h3>
-                <p style={{ color: '#888', marginBottom: 10, fontSize: 12, lineHeight: 1.3, minHeight: 30 }}>
-                  {item.description?.slice(0, 45) || 'Delicious item'}
-                </p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: 18, fontWeight: 'bold', color: '#ff6b35' }}>₹{item.price}</span>
+              <div style={{ flex: 1, padding: 12, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
+                <div>
+                  <h3 style={{ fontSize: 15, fontWeight: 'bold', margin: 0, marginBottom: 4, color: '#333' }}>{item.name}</h3>
+                  <p style={{ fontSize: 12, color: '#666', margin: 0, lineHeight: 1.4 }}>
+                    {item.description?.slice(0, 60) || 'Delicious item'}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
+                  <span style={{ fontSize: 16, fontWeight: 'bold', color: '#d32f2f' }}>₹{item.price}</span>
                   <button 
                     onClick={() => addToCart(item)} 
                     style={{ 
-                      background: '#ff6b35', 
+                      background: addingItem === item.id ? '#4caf50' : '#d32f2f',
                       color: 'white', 
-                      padding: '8px 14px', 
-                      borderRadius: 20, 
+                      padding: '6px 16px', 
+                      borderRadius: 6, 
                       border: 'none', 
                       cursor: 'pointer', 
                       fontWeight: 'bold', 
-                      fontSize: 14,
-                      boxShadow: '0 2px 8px rgba(255,107,53,0.3)'
+                      fontSize: 13,
+                      transition: 'all 0.2s'
                     }}
                   >
-                    + Add
+                    {addingItem === item.id ? '✓ ADDED' : '+ ADD'}
                   </button>
                 </div>
+                {addingItem === item.id && (
+                  <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(76, 175, 80, 0.95)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 'bold', fontSize: 14
+                  }}>
+                    ✓ Added to cart
+                  </div>
+                )}
               </div>
             </div>
           ))}
         </div>
 
         {searchedItems.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 60, background: 'white', borderRadius: 20, marginTop: 20 }}>
-            <div style={{ fontSize: 60, marginBottom: 16 }}>🔍</div>
-            <h2 style={{ fontSize: 20, marginBottom: 8, color: '#333' }}>No items found</h2>
-            <p style={{ color: '#888' }}>Try a different search term</p>
+          <div style={{ textAlign: 'center', padding: 40 }}>
+            <div style={{ fontSize: 50, marginBottom: 12 }}>🔍</div>
+            <h3 style={{ fontSize: 18, color: '#333', marginBottom: 4 }}>No items found</h3>
+            <p style={{ fontSize: 14, color: '#666' }}>Try searching for something else</p>
           </div>
         )}
       </div>
 
-      {/* Bottom Cart Button */}
+      {/* Bottom Cart */}
       {cartCount > 0 && (
         <div style={{ 
           position: 'fixed', 
-          bottom: 16, 
-          left: 16, 
-          right: 16, 
-          maxWidth: 500,
-          margin: '0 auto',
-          zIndex: 100
+          bottom: 0, 
+          left: 0, 
+          right: 0,
+          background: '#fff',
+          borderTop: '1px solid #ddd',
+          padding: '12px 16px',
+          zIndex: 99
         }}>
           <Link href={`/${restaurant.slug}/cart`} style={{ 
-            background: 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+            background: '#d32f2f',
             color: 'white',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            padding: '16px 20px',
-            borderRadius: 16,
+            padding: '14px 20px',
+            borderRadius: 8,
             textDecoration: 'none',
             fontWeight: 'bold',
-            fontSize: 16,
-            boxShadow: '0 4px 20px rgba(34,197,94,0.4)'
+            fontSize: 15,
+            boxShadow: '0 4px 12px rgba(211, 47, 47, 0.3)'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 20 }}>🛒</span>
-              <span>{cartCount} items</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span>🛒</span>
+              <span>{cartCount} {cartCount === 1 ? 'item' : 'items'}</span>
             </div>
             <span>View Cart →</span>
           </Link>

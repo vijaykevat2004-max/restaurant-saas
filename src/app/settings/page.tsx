@@ -73,7 +73,7 @@ export default function SettingsPage() {
     }
     
     setSaving(false)
-    setTimeout(() => setMessage(''), 3000)
+    setTimeout(() => { setMessage('') }, 3000)
   }
 
   const handleSaveUPI = async () => {
@@ -97,25 +97,26 @@ export default function SettingsPage() {
     }
     
     setSaving(false)
-    setTimeout(() => setMessage(''), 3000)
+    setTimeout(() => { setMessage('') }, 3000)
   }
 
   if (loading) {
     return (
-      <div><Navbar />
+      <div>
+        <Navbar />
         <div style={{padding: 20, textAlign: 'center'}}>Loading...</div>
       </div>
     )
   }
 
-  const messageStyle = {
-    background: message.includes('success') || message.includes('UPI') ? '#dcfce7' : '#fef2f2',
-    color: message.includes('success') || message.includes('UPI') ? '#166534' : '#dc2626',
-    padding: 14,
-    borderRadius: 12,
-    marginBottom: 20,
-    textAlign: 'center' as const,
-    fontWeight: 'bold' as const
+  const getMessageBg = () => {
+    if (message.includes('success') || message.includes('UPI')) return '#dcfce7'
+    return '#fef2f2'
+  }
+
+  const getMessageColor = () => {
+    if (message.includes('success') || message.includes('UPI')) return '#166534'
+    return '#dc2626'
   }
 
   return (
@@ -125,26 +126,33 @@ export default function SettingsPage() {
         <h1 style={{fontSize: 28, fontWeight: 'bold', marginBottom: 8, color: '#333'}}>Settings</h1>
         <p style={{color: '#666', marginBottom: 32}}>Manage your restaurant settings</p>
 
-        {message && <div style={messageStyle}>{message}</div>}
+        {message ? (
+          <div style={{background: getMessageBg(), color: getMessageColor(), padding: 14, borderRadius: 12, marginBottom: 20, textAlign: 'center', fontWeight: 'bold'}}>
+            {message}
+          </div>
+        ) : null}
 
         <div style={{background: 'white', borderRadius: 16, padding: 24, marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
           <h2 style={{fontSize: 18, fontWeight: 'bold', marginBottom: 20}}>Restaurant Logo</h2>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' as const }}>
+          <div style={{display: 'flex', alignItems: 'center', gap: 20}}>
             {logoPreview ? (
-              <img src={logoPreview} alt="Logo" style={{ width: 80, height: 80, borderRadius: 16, objectFit: 'cover', border: '2px solid #e0e0e0' }} />
+              <img src={logoPreview} alt="Logo" style={{width: 80, height: 80, borderRadius: 16, objectFit: 'cover', border: '2px solid #e0e0e0'}} />
             ) : (
-              <div style={{ width: 80, height: 80, borderRadius: 16, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32 }}>
+              <div style={{width: 80, height: 80, borderRadius: 16, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32}}>
                 🍔
               </div>
             )}
-            <div style={{ flex: 1, minWidth: 250 }}>
+            <div style={{flex: 1}}>
               <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#555'}}>Logo URL</label>
               <input 
                 type="url" 
                 value={form.logo} 
-                onChange={(e) => { setForm({...form, logo: e.target.value}); setLogoPreview(e.target.value || null) }} 
-                style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14, boxSizing: 'border-box' as const}}
+                onChange={(e) => {
+                  setForm({...form, logo: e.target.value})
+                  setLogoPreview(e.target.value)
+                }} 
+                style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 14}}
                 placeholder="https://example.com/logo.png"
               />
               <p style={{color: '#888', fontSize: 12, marginTop: 4}}>Paste an image URL for your restaurant logo</p>
@@ -157,36 +165,36 @@ export default function SettingsPage() {
           
           <div style={{marginBottom: 16}}>
             <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#555'}}>Restaurant Name</label>
-            <input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, boxSizing: 'border-box' as const}} />
+            <input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16}} />
           </div>
           
           <div style={{marginBottom: 16}}>
             <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#555'}}>Description</label>
-            <textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, minHeight: 80, boxSizing: 'border-box' as const}} placeholder="Tell customers about your restaurant..." />
+            <textarea value={form.description} onChange={(e) => setForm({...form, description: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, minHeight: 80}} placeholder="Tell customers about your restaurant..." />
           </div>
           
           <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
             <div style={{marginBottom: 16}}>
               <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#555'}}>Phone</label>
-              <input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, boxSizing: 'border-box' as const}} placeholder="+91 98765 43210" />
+              <input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16}} placeholder="+91 98765 43210" />
             </div>
             <div style={{marginBottom: 16}}>
               <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#555'}}>Email</label>
-              <input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, boxSizing: 'border-box' as const}} placeholder="contact@restaurant.com" />
+              <input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16}} placeholder="contact@restaurant.com" />
             </div>
           </div>
           
           <div style={{marginBottom: 16}}>
             <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#555'}}>Address</label>
-            <input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, boxSizing: 'border-box' as const}} placeholder="123 Main Street, City" />
+            <input value={form.address} onChange={(e) => setForm({...form, address: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16}} placeholder="123 Main Street, City" />
           </div>
           
           <div style={{marginBottom: 24}}>
             <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#555'}}>Opening Hours</label>
-            <input value={form.openingHours} onChange={(e) => setForm({...form, openingHours: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, boxSizing: 'border-box' as const}} placeholder="9:00 AM - 10:00 PM" />
+            <input value={form.openingHours} onChange={(e) => setForm({...form, openingHours: e.target.value})} style={{width: '100%', padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16}} placeholder="9:00 AM - 10:00 PM" />
           </div>
           
-          <button onClick={handleSave} disabled={saving} style={{background: saving ? '#ccc' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)', color: 'white', padding: '14px 28px', borderRadius: 12, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 16}}>
+          <button onClick={handleSave} disabled={saving} style={{background: saving ? '#ccc' : '#22c55e', color: 'white', padding: '14px 28px', borderRadius: 12, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 16}}>
             {saving ? 'Saving...' : 'Save Restaurant Info'}
           </button>
         </div>
@@ -201,7 +209,7 @@ export default function SettingsPage() {
             
             <div style={{marginBottom: 16}}>
               <label style={{display: 'block', marginBottom: 6, fontWeight: 'bold', color: '#2e7d32'}}>Your UPI ID</label>
-              <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 14, border: '1px solid #22c55e', borderRadius: 12, fontSize: 16, boxSizing: 'border-box' as const, background: 'white'}} placeholder="yourname@upi" />
+              <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 14, border: '1px solid #22c55e', borderRadius: 12, fontSize: 16, background: 'white'}} placeholder="yourname@upi" />
             </div>
             
             <button onClick={handleSaveUPI} disabled={saving} style={{background: '#2e7d32', color: 'white', padding: '12px 24px', borderRadius: 10, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 15}}>
@@ -216,7 +224,7 @@ export default function SettingsPage() {
           <div style={{background: '#f8f8f8', borderRadius: 12, padding: 16, marginBottom: 16}}>
             <p style={{fontSize: 14, color: '#666', marginBottom: 8}}>Store URL:</p>
             <code style={{fontSize: 16, fontWeight: 'bold', color: '#ff6b35'}}>
-              {typeof window !== 'undefined' ? window.location.origin : ''}/{restaurant?.slug || 'your-store'}
+              {window.location.origin}/{restaurant?.slug || 'your-store'}
             </code>
           </div>
           

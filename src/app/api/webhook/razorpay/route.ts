@@ -3,13 +3,25 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sseManager } from '@/lib/sse'
-
-const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET
+import crypto from 'crypto'
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text()
     const signature = req.headers.get('x-razorpay-signature')
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET
+
+    if (webhookSecret && signature) {
+      const expectedSignature = crypto
+        .createHmac('sha256', webhookSecret)
+        .update(body)
+        .digest('hex')
+
+      if (signature !== expectedSignature) {
+        console.error('Invalid webhook signature')
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
+      }
+    }
 
     let event: any
     
@@ -19,16 +31,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
     }
 
-    console.log('Webhook received:', event.event, event.payload?.payment?.entity?.status)
+    console.log('Webhook received:', event.event)
 
     if (event.event === 'payment.captured') {
       const payment = event.payload?.payment?.entity
-      const orderId = event.payload?.order?.entity?.receipt
+      const razorpayOrderId = event.payload?.order?.entity?.id
 
-      if (orderId) {
+      if (razorpayOrderId) {
         const dbOrder = await prisma.order.findFirst({
           where: { 
-            razorpayOrderId: orderId
+            razorpayOrderId: razorpayOrderId
           }
         })
 

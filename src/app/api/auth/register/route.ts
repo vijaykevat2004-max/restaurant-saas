@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password, restaurantName, restaurantSlug } = await req.json()
+    const { name, email, password, restaurantName, restaurantSlug, restaurantLogo } = await req.json()
 
     if (!name || !email || !password || !restaurantName || !restaurantSlug) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       data: {
         name: restaurantName,
         slug,
+        logo: restaurantLogo || null,
         description: `Welcome to ${restaurantName}`,
         categories: {
           create: [

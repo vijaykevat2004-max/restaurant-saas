@@ -24,7 +24,8 @@ export async function PATCH(req: NextRequest) {
         phone: body.phone,
         address: body.address,
         email: body.email,
-        openingHours: body.openingHours
+        openingHours: body.openingHours,
+        logo: body.logo || null
       }
     })
 

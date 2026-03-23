@@ -14,6 +14,7 @@ interface Restaurant {
   id: string
   name: string
   slug: string
+  logo: string | null
 }
 
 export default function CartPageClient({ restaurant }: { restaurant: Restaurant }) {
@@ -23,7 +24,6 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   const [customerPhone, setCustomerPhone] = useState('')
   const [notes, setNotes] = useState('')
   const [placing, setPlacing] = useState(false)
-  const [showProcessing, setShowProcessing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [orderTotal, setOrderTotal] = useState(0)
@@ -115,27 +115,18 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
 
   if (showSuccess) {
     return (
-      <div style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ background: 'white', borderRadius: 20, padding: 40, textAlign: 'center', maxWidth: 400, boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
-          <div style={{ fontSize: 80, marginBottom: 20 }}>✅</div>
+      <div style={{ minHeight: '100vh', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+        <div style={{ background: 'white', borderRadius: 24, padding: 40, textAlign: 'center', maxWidth: 400, boxShadow: '0 4px 30px rgba(0,0,0,0.1)' }}>
+          <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#e8f5e9', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 50 }}>✅</span>
+          </div>
           <h1 style={{ fontSize: 28, fontWeight: 'bold', color: '#22c55e', marginBottom: 12 }}>Order Placed!</h1>
-          <p style={{ fontSize: 18, color: '#666', marginBottom: 8 }}>Order <strong>#{orderNumber}</strong></p>
-          <p style={{ fontSize: 16, color: '#888', marginBottom: 24 }}>Amount: <strong>₹{orderTotal}</strong></p>
-          <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Your order is being prepared!</p>
-          <Link href={`/${restaurant.slug}`} style={{ background: '#f97316', color: 'white', padding: '14px 28px', borderRadius: 8, textDecoration: 'none', fontWeight: 'bold', fontSize: 16, display: 'inline-block' }}>
-            Order More
+          <p style={{ fontSize: 18, color: '#333', marginBottom: 8 }}>Order <strong>#{orderNumber}</strong></p>
+          <p style={{ fontSize: 24, fontWeight: 'bold', color: '#ff6b35', marginBottom: 24 }}>₹{orderTotal}</p>
+          <p style={{ fontSize: 14, color: '#888', marginBottom: 32 }}>Your delicious food is being prepared!</p>
+          <Link href={`/${restaurant.slug}`} style={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white', padding: '16px 32px', borderRadius: 12, textDecoration: 'none', fontWeight: 'bold', fontSize: 16, display: 'inline-block', boxShadow: '0 4px 15px rgba(255,107,53,0.3)' }}>
+            Order More 🍔
           </Link>
-        </div>
-      </div>
-    )
-  }
-
-  if (showProcessing) {
-    return (
-      <div style={{ minHeight: '100vh', background: '#fafafa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 64, marginBottom: 20, animation: 'pulse 1s infinite' }}>💳</div>
-          <h2 style={{ fontSize: 20 }}>Processing payment...</h2>
         </div>
       </div>
     )
@@ -143,15 +134,17 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
 
   if (cart.length === 0) {
     return (
-      <div style={{ minHeight: '100vh', background: '#fafafa' }}>
-        <div style={{ background: '#f97316', color: 'white', padding: '20px', textAlign: 'center' }}>
-          <h1 style={{ fontSize: 28, fontWeight: 'bold' }}>Your Cart</h1>
+      <div style={{ minHeight: '100vh', background: '#fff' }}>
+        <div style={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white', padding: '20px', textAlign: 'center' }}>
+          <h1 style={{ fontSize: 24, fontWeight: 'bold' }}>Your Cart</h1>
         </div>
         <div style={{ textAlign: 'center', padding: 60 }}>
-          <div style={{ fontSize: 64, marginBottom: 20 }}>🛒</div>
-          <h2 style={{ fontSize: 24, marginBottom: 20 }}>Your cart is empty</h2>
-          <Link href={`/${restaurant.slug}`} style={{ background: '#f97316', color: 'white', padding: '14px 28px', borderRadius: 8, textDecoration: 'none', fontWeight: 'bold', fontSize: 16 }}>
-            Browse Menu
+          <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#f5f5f5', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 50 }}>🛒</span>
+          </div>
+          <h2 style={{ fontSize: 24, marginBottom: 20, color: '#333' }}>Your cart is empty</h2>
+          <Link href={`/${restaurant.slug}`} style={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white', padding: '14px 28px', borderRadius: 12, textDecoration: 'none', fontWeight: 'bold', fontSize: 16, display: 'inline-block' }}>
+            Browse Menu 🍔
           </Link>
         </div>
       </div>
@@ -159,74 +152,143 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#fafafa' }}>
-      <div style={{ background: '#f97316', color: 'white', padding: '20px', textAlign: 'center' }}>
-        <h1 style={{ fontSize: 28, fontWeight: 'bold' }}>Your Cart - {restaurant.name}</h1>
+    <div style={{ minHeight: '100vh', background: '#f8f8f8', paddingBottom: 200 }}>
+      {/* Header */}
+      <div style={{ background: 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)', color: 'white', padding: '16px' }}>
+        <div style={{ maxWidth: 800, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <Link href={`/${restaurant.slug}`} style={{ color: 'white', textDecoration: 'none', fontSize: 24 }}>
+            ←
+          </Link>
+          <h1 style={{ fontSize: 24, fontWeight: 'bold' }}>Your Cart</h1>
+        </div>
       </div>
       
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: 24 }}>
-        <Link href={`/${restaurant.slug}`} style={{ color: '#666', textDecoration: 'none', marginBottom: 20, display: 'inline-block' }}>
-          ← Back to Menu
-        </Link>
-
-        <div style={{ marginTop: 20 }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: 16 }}>
+        {/* Cart Items */}
+        <div style={{ marginBottom: 16 }}>
           {cart.map(item => (
-            <div key={item.id} style={{ background: 'white', borderRadius: 12, padding: 16, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-              <div style={{ width: 80, height: 80, borderRadius: 8, background: '#f3f4f6', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 32 }}>🍔</span>}
+            <div key={item.id} style={{ 
+              background: 'white', 
+              borderRadius: 16, 
+              padding: 16, 
+              marginBottom: 12, 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: 12, 
+              boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+            }}>
+              <div style={{ width: 70, height: 70, borderRadius: 12, background: '#fafafa', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {item.image ? <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28 }}>🍽️</span>}
               </div>
-              <div style={{ flex: 1 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 4 }}>{item.name}</h3>
-                <p style={{ fontSize: 20, fontWeight: 'bold', color: '#f97316' }}>₹{item.price}</p>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <h3 style={{ fontSize: 16, fontWeight: 'bold', marginBottom: 4 }}>{item.name}</h3>
+                <p style={{ fontSize: 16, fontWeight: 'bold', color: '#ff6b35' }}>₹{item.price}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <button onClick={() => updateQty(item.id, -1)} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', background: 'white', fontSize: 20, cursor: 'pointer', fontWeight: 'bold' }}>-</button>
-                <span style={{ fontSize: 20, fontWeight: 'bold', minWidth: 30, textAlign: 'center' }}>{item.qty}</span>
-                <button onClick={() => updateQty(item.id, 1)} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #ddd', background: 'white', fontSize: 20, cursor: 'pointer', fontWeight: 'bold' }}>+</button>
+                <button 
+                  onClick={() => updateQty(item.id, -1)} 
+                  style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #e0e0e0', background: 'white', fontSize: 18, cursor: 'pointer', fontWeight: 'bold', color: '#666' }}
+                >−</button>
+                <span style={{ fontSize: 18, fontWeight: 'bold', minWidth: 30, textAlign: 'center' }}>{item.qty}</span>
+                <button 
+                  onClick={() => updateQty(item.id, 1)} 
+                  style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: '#ff6b35', fontSize: 18, cursor: 'pointer', fontWeight: 'bold', color: 'white' }}
+                >+</button>
               </div>
-              <div style={{ textAlign: 'right', minWidth: 80 }}>
-                <p style={{ fontSize: 18, fontWeight: 'bold' }}>₹{item.price * item.qty}</p>
-                <button onClick={() => removeItem(item.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14 }}>Remove</button>
+              <div style={{ textAlign: 'right', minWidth: 60 }}>
+                <p style={{ fontSize: 16, fontWeight: 'bold' }}>₹{item.price * item.qty}</p>
+                <button onClick={() => removeItem(item.id)} style={{ color: '#ff4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, padding: 0 }}>Remove</button>
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ background: 'white', borderRadius: 12, padding: 24, marginTop: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Order Summary</h3>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 16 }}>
-            <span>Subtotal ({cart.reduce((s, i) => s + i.qty, 0)} items)</span>
+        {/* Order Summary */}
+        <div style={{ background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>💰 Order Summary</h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 15 }}>
+            <span style={{ color: '#666' }}>Subtotal ({cart.reduce((s, i) => s + i.qty, 0)} items)</span>
             <span>₹{subtotal}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8, fontSize: 16 }}>
-            <span>Tax (8%)</span>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12, fontSize: 15 }}>
+            <span style={{ color: '#666' }}>Tax (8%)</span>
             <span>₹{tax.toFixed(2)}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 24, fontWeight: 'bold', borderTop: '2px solid #eee', paddingTop: 16, marginTop: 16 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 22, fontWeight: 'bold', borderTop: '2px solid #eee', paddingTop: 16 }}>
             <span>Total</span>
-            <span style={{ color: '#f97316' }}>₹{total}</span>
+            <span style={{ color: '#ff6b35' }}>₹{total}</span>
           </div>
         </div>
 
-        <div style={{ background: 'white', borderRadius: 12, padding: 24, marginTop: 24, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 16 }}>Your Details</h3>
+        {/* Customer Details */}
+        <div style={{ background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+          <h3 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 16 }}>👤 Your Details</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            <input type="text" placeholder="Full Name *" value={customerName} onChange={e => setCustomerName(e.target.value)} style={{ padding: 14, border: '1px solid #ddd', borderRadius: 8, fontSize: 16 }} />
-            <input type="tel" placeholder="Phone Number *" value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} style={{ padding: 14, border: '1px solid #ddd', borderRadius: 8, fontSize: 16 }} />
-            <input type="email" placeholder="Email (optional)" value={customerEmail} onChange={e => setCustomerEmail(e.target.value)} style={{ padding: 14, border: '1px solid #ddd', borderRadius: 8, fontSize: 16 }} />
-            <textarea placeholder="Special instructions (optional)" value={notes} onChange={e => setNotes(e.target.value)} style={{ padding: 14, border: '1px solid #ddd', borderRadius: 8, fontSize: 16, minHeight: 80, resize: 'vertical' }} />
+            <input 
+              type="text" 
+              placeholder="Full Name *" 
+              value={customerName} 
+              onChange={e => setCustomerName(e.target.value)} 
+              style={{ padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, width: '100%', boxSizing: 'border-box' }} 
+            />
+            <input 
+              type="tel" 
+              placeholder="Phone Number *" 
+              value={customerPhone} 
+              onChange={e => setCustomerPhone(e.target.value)} 
+              style={{ padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, width: '100%', boxSizing: 'border-box' }} 
+            />
+            <input 
+              type="email" 
+              placeholder="Email (optional)" 
+              value={customerEmail} 
+              onChange={e => setCustomerEmail(e.target.value)} 
+              style={{ padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, width: '100%', boxSizing: 'border-box' }} 
+            />
+            <textarea 
+              placeholder="Special instructions (optional)" 
+              value={notes} 
+              onChange={e => setNotes(e.target.value)} 
+              style={{ padding: 14, border: '1px solid #e0e0e0', borderRadius: 12, fontSize: 16, minHeight: 80, resize: 'vertical', width: '100%', boxSizing: 'border-box' }} 
+            />
           </div>
         </div>
 
+        {/* Place Order Button */}
         <button 
           onClick={placeOrder}
           disabled={placing}
-          style={{ width: '100%', padding: '18px', marginTop: 24, background: placing ? '#ccc' : '#22c55e', color: 'white', border: 'none', borderRadius: 12, fontSize: 18, fontWeight: 'bold', cursor: placing ? 'not-allowed' : 'pointer' }}
+          style={{ 
+            width: '100%', 
+            padding: '18px', 
+            background: placing ? '#ccc' : 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)',
+            color: 'white', 
+            border: 'none', 
+            borderRadius: 16, 
+            fontSize: 18, 
+            fontWeight: 'bold', 
+            cursor: placing ? 'not-allowed' : 'pointer',
+            boxShadow: '0 4px 15px rgba(34,197,94,0.3)',
+            marginBottom: 12
+          }}
         >
-          {placing ? 'Processing...' : `Place Order - ₹${total}`}
+          {placing ? '⏳ Processing...' : `Place Order • ₹${total}`}
         </button>
 
-        <button onClick={clearCart} style={{ width: '100%', padding: '12px', marginTop: 12, background: 'none', color: '#ef4444', border: '1px solid #ef4444', borderRadius: 8, fontSize: 16, cursor: 'pointer' }}>
+        <button 
+          onClick={clearCart} 
+          style={{ 
+            width: '100%', 
+            padding: '14px', 
+            background: 'white', 
+            color: '#ff4444', 
+            border: '2px solid #ff4444', 
+            borderRadius: 12, 
+            fontSize: 16, 
+            fontWeight: 'bold',
+            cursor: 'pointer' 
+          }}
+        >
           Clear Cart
         </button>
       </div>

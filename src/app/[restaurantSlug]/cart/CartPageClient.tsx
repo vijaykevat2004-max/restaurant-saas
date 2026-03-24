@@ -2,6 +2,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
+declare global {
+  interface Window {
+    Razorpay: any
+  }
+}
+
 interface CartItem {
   id: string
   name: string
@@ -58,6 +64,16 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
     }
   }, [orderType, restaurant.slug])
 
+  useEffect(() => {
+    const script = document.createElement('script')
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
+    script.async = true
+    document.body.appendChild(script)
+    return () => {
+      document.body.removeChild(script)
+    }
+  }, [])
+
   const updateQty = (id: string, delta: number) => {
     const updated = cart.map(item => {
       if (item.id === id) {
@@ -84,6 +100,75 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0)
   const tax = subtotal * 0.08
   const total = Math.round(subtotal + tax)
+
+  const processUPIpayment = async (orderId: string, amount: number) => {
+    return new Promise(async (resolve, reject) => {
+      try {
+        const res = await fetch('/api/payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount,
+            orderId,
+            receipt: `order_${Date.now()}`
+          })
+        })
+        const paymentData = await res.json()
+
+        if (!window.Razorpay) {
+          resolve({ success: true, mockMode: true })
+          return
+        }
+
+        const rzp = new window.Razorpay({
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_XXXXXXXXXXXXX',
+          amount: amount * 100,
+          currency: 'INR',
+          name: restaurant.name,
+          description: `Order Payment`,
+          order_id: paymentData.id,
+          handler: async function (response: any) {
+            try {
+              await fetch('/api/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  orderId,
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature
+                })
+              })
+              resolve({ success: true })
+            } catch (e) {
+              reject(e)
+            }
+          },
+          prefill: {
+            name: customerName,
+            email: customerEmail,
+            contact: customerPhone
+          },
+          theme: {
+            color: '#d32f2f'
+          },
+          modal: {
+            ondismiss: () => {
+              reject(new Error('Payment cancelled'))
+            }
+          }
+        })
+
+        rzp.on('payment.failed', (response: any) => {
+          reject(new Error(response.error.description || 'Payment failed'))
+        })
+
+        rzp.open()
+      } catch (e) {
+        reject(e)
+      }
+    })
+  }
 
   const placeOrder = async () => {
     if (cart.length === 0) return
@@ -132,11 +217,18 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       setOrderTotal(data.order.total)
       
       if (paymentMethod === 'UPI') {
-        await fetch('/api/payment/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: data.order.id, verified: true })
-        })
+        try {
+          await processUPIpayment(data.order.id, data.order.total)
+        } catch (e: any) {
+          if (e.message === 'Payment cancelled') {
+            window.alert('Payment was cancelled. Please try again.')
+            setPlacing(false)
+            return
+          }
+          window.alert('Payment error: ' + (e.message || 'Failed'))
+          setPlacing(false)
+          return
+        }
       }
 
       clearCart()

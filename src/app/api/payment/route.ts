@@ -11,10 +11,22 @@ export async function POST(req: NextRequest) {
     const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET
 
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET || RAZORPAY_KEY_ID === 'rzp_test_XXXXXXXXXXXXX') {
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET || 
+        RAZORPAY_KEY_ID === 'rzp_test_XXXXXXXXXXXXX' || 
+        RAZORPAY_KEY_SECRET.includes('XXXXXXXX') ||
+        RAZORPAY_KEY_SECRET === 'your-super-secret-key-change-in-production-abc123') {
+      const mockOrderId = `mock_${Date.now()}`
+      if (localOrderId) {
+        await prisma.order.update({
+          where: { id: localOrderId },
+          data: { razorpayOrderId: mockOrderId }
+        }).catch(() => {})
+      }
       return NextResponse.json({ 
         mockMode: true,
-        orderId: `mock_${Date.now()}`
+        orderId: mockOrderId,
+        amount: Math.round(amount * 100),
+        currency: 'INR'
       })
     }
 
@@ -27,8 +39,7 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         amount: Math.round(amount * 100),
         currency: 'INR',
-        receipt: receipt || `order_${Date.now()}`,
-        method: 'upi'
+        receipt: receipt || `order_${Date.now()}`
       })
     })
 

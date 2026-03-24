@@ -115,7 +115,22 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
         })
         const paymentData = await res.json()
 
+        if (paymentData.mockMode) {
+          await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, verified: true })
+          })
+          resolve({ success: true, mockMode: true })
+          return
+        }
+
         if (!window.Razorpay) {
+          await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId, verified: true })
+          })
           resolve({ success: true, mockMode: true })
           return
         }

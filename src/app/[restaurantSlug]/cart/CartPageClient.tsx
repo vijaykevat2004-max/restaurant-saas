@@ -110,7 +110,8 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
           body: JSON.stringify({
             amount,
             orderId,
-            receipt: `order_${Date.now()}`
+            receipt: `order_${Date.now()}`,
+            restaurantSlug: restaurant.slug
           })
         })
         const paymentData = await res.json()

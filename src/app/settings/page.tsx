@@ -22,6 +22,8 @@ export default function SettingsPage() {
   })
   
   const [upiId, setUpiId] = useState('')
+  const [razorpayKeyId, setRazorpayKeyId] = useState('')
+  const [razorpayKeySecret, setRazorpayKeySecret] = useState('')
 
   useEffect(() => {
     loadSettings()
@@ -43,6 +45,8 @@ export default function SettingsPage() {
           logo: menuData.restaurant.logo || ''
         })
         setLogoPreview(menuData.restaurant.logo || null)
+        setRazorpayKeyId(menuData.restaurant.razorpayKeyId || '')
+        setRazorpayKeySecret(menuData.restaurant.razorpayKeySecret || '')
       }
       
       const upiRes = await fetch('/api/upi')
@@ -266,16 +270,66 @@ export default function SettingsPage() {
           <p style={{color: '#888', fontSize: 13, marginBottom: 14}}>Set up your UPI for receiving payments</p>
           
           <div style={{background: '#e8f5e9', borderRadius: 10, padding: 16, marginBottom: 16}}>
-            <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>📱 UPI Payment</p>
-            
+            <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>📱 UPI ID (Display)</p>
+             
             <div style={{marginBottom: 12}}>
               <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Your UPI ID</label>
               <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="yourname@upi" />
             </div>
-            
+             
             <button onClick={handleSaveUPI} disabled={saving} style={{background: '#2e7d32', color: 'white', padding: '10px 20px', borderRadius: 8, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 13}}>
               {saving ? 'Saving...' : '💾 Save UPI'}
             </button>
+          </div>
+        </div>
+
+        <div style={{background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
+          <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 4}}>Razorpay Setup</h2>
+          <p style={{color: '#888', fontSize: 13, marginBottom: 14}}>Add your own Razorpay keys to receive payments directly in your account</p>
+          
+          <div style={{background: '#fef3c7', borderRadius: 10, padding: 16, marginBottom: 16}}>
+            <p style={{fontWeight: 'bold', color: '#92400e', marginBottom: 10, fontSize: 14}}>🔐 Razorpay API Keys</p>
+            
+            <div style={{marginBottom: 12}}>
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#92400e', fontSize: 13}}>Key ID</label>
+              <input value={razorpayKeyId} onChange={(e) => setRazorpayKeyId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #f59e0b', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="rzp_test_xxxxxxxxxxxx" />
+            </div>
+            
+            <div style={{marginBottom: 12}}>
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#92400e', fontSize: 13}}>Key Secret</label>
+              <input type="password" value={razorpayKeySecret} onChange={(e) => setRazorpayKeySecret(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #f59e0b', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="xxxxxxxxxxxxxxxxxxxx" />
+            </div>
+             
+            <button onClick={async () => {
+              setSaving(true)
+              try {
+                const res = await fetch('/api/restaurant', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ razorpayKeyId, razorpayKeySecret })
+                })
+                if (res.ok) {
+                  setMessage('Razorpay keys saved! Payments will go to your account.')
+                } else {
+                  setMessage('Failed to save Razorpay keys')
+                }
+              } catch (e) {
+                setMessage('Error saving Razorpay keys')
+              }
+              setSaving(false)
+              setTimeout(() => setMessage(''), 5000)
+            }} disabled={saving} style={{background: '#d97706', color: 'white', padding: '10px 20px', borderRadius: 8, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 13}}>
+              {saving ? 'Saving...' : '💾 Save Razorpay Keys'}
+            </button>
+          </div>
+          
+          <div style={{background: '#f3f4f6', borderRadius: 10, padding: 12}}>
+            <p style={{fontSize: 12, color: '#666', margin: 0}}>
+              💡 <strong>How to get Razorpay keys:</strong><br/>
+              1. Go to razorpay.com → Sign Up<br/>
+              2. Dashboard → Settings → API Keys<br/>
+              3. Copy Key ID and Key Secret
+            </p>
           </div>
         </div>
 

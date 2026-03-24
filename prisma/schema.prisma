@@ -30,6 +30,8 @@ model Restaurant {
   email        String?
   openingHours String?
   upiId        String?
+  razorpayKeyId     String?
+  razorpayKeySecret String?
   isActive     Boolean    @default(true)
   categories   Category[]
   orders       Order[]

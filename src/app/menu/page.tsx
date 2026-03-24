@@ -145,13 +145,26 @@ export default function MenuPage() {
   }
 
   async function handleDelete(id: string) {
-    if (window.confirm('Delete this item?')) { await fetch('/api/menu/' + id, {method: 'DELETE'}); loadData() }
+    if (window.confirm('Delete this item?')) {
+      const res = await fetch('/api/menu/' + id, {method: 'DELETE'})
+      if (res.ok) {
+        loadData()
+      } else {
+        const data = await res.json()
+        window.alert('Error: ' + (data.error || 'Failed to delete'))
+      }
+    }
   }
 
   async function handleDeleteCategory(id: string) {
     if (window.confirm('Delete this category and all its items?')) { 
-      await fetch('/api/menu/category/' + id, {method: 'DELETE'}); 
-      loadData() 
+      const res = await fetch('/api/menu/category/' + id, {method: 'DELETE'})
+      if (res.ok) {
+        loadData()
+      } else {
+        const data = await res.json()
+        window.alert('Error: ' + (data.error || 'Failed to delete'))
+      }
     }
   }
 

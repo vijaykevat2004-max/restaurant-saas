@@ -34,23 +34,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const restaurantId = session?.user?.restaurantId as string | null
-    
-    if (!restaurantId) {
-      return NextResponse.json({ error: 'No restaurant' }, { status: 400 })
-    }
-    
     const { id } = await params
-    
-    const category = await prisma.category.findUnique({ where: { id } })
-    
-    if (!category) {
-      return NextResponse.json({ error: 'Category not found' }, { status: 404 })
-    }
-    
-    if (category.restaurantId !== restaurantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
     
     await prisma.category.delete({
       where: { id }

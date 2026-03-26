@@ -66,22 +66,17 @@ export async function PATCH(req: NextRequest) {
     
     const body = await req.json()
     
-    const updateData: Record<string, unknown> = {}
-    
-    if (body.name !== undefined) updateData.name = body.name
-    if (body.description !== undefined) updateData.description = body.description
-    if (body.phone !== undefined) updateData.phone = body.phone
-    if (body.address !== undefined) updateData.address = body.address
-    if (body.email !== undefined) updateData.email = body.email
-    if (body.openingHours !== undefined) updateData.openingHours = body.openingHours
-    if (body.logo !== undefined) updateData.logo = body.logo || null
-    if (body.razorpayKeyId !== undefined) updateData.razorpayKeyId = body.razorpayKeyId || null
-    if (body.razorpayKeySecret !== undefined) updateData.razorpayKeySecret = body.razorpayKeySecret || null
-    if (body.upiId !== undefined) updateData.upiId = body.upiId || null
-    
     const updated = await prisma.restaurant.update({
       where: { id: restaurantId },
-      data: updateData
+      data: {
+        name: body.name,
+        description: body.description,
+        phone: body.phone,
+        address: body.address,
+        email: body.email,
+        openingHours: body.openingHours,
+        logo: body.logo || null
+      }
     })
 
     return NextResponse.json({ restaurant: updated })

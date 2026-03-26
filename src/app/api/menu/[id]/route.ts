@@ -48,32 +48,13 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     
-    const restaurantId = session?.user?.restaurantId as string | null
-    
-    if (!restaurantId) {
-      return NextResponse.json({ error: 'No restaurant' }, { status: 400 })
-    }
-    
     const { id } = await params
-
-    const item = await prisma.menuItem.findUnique({
-      where: { id },
-      include: { category: true }
-    })
-    
-    if (!item) {
-      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
-    }
-    
-    if (item.category.restaurantId !== restaurantId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
-    }
 
     await prisma.menuItem.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Failed to delete menu item:', error)
-    return NextResponse.json({ error: 'Failed to delete menu item', details: String(error) }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to delete menu item' }, { status: 500 })
   }
 }

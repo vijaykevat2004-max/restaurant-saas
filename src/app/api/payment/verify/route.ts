@@ -21,18 +21,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (order.paymentStatus === 'PAID') {
-      return NextResponse.json({ success: true, message: 'Already verified', status: order.status })
+      return NextResponse.json({ success: true, message: 'Already verified' })
     }
 
     const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET
-    const isMockMode = !RAZORPAY_KEY_SECRET || RAZORPAY_KEY_SECRET.includes('XXXXXXXX') || RAZORPAY_KEY_SECRET === 'your-super-secret-key-change-in-production-abc123'
 
-    if (verified || isMockMode) {
+    if (verified) {
       await prisma.order.update({
         where: { id: orderId },
         data: { 
           paymentStatus: 'PAID',
-          paymentId: razorpay_payment_id || `mock_${Date.now()}`,
+          paymentId: razorpay_payment_id || `upi_${Date.now()}`,
           status: 'PENDING'
         }
       })
@@ -42,10 +41,10 @@ export async function POST(req: NextRequest) {
         data: { orderId, status: 'PENDING' }
       })
 
-      return NextResponse.json({ success: true, verified: true, mockMode: isMockMode })
+      return NextResponse.json({ success: true, verified: true })
     }
 
-    if (razorpay_signature && RAZORPAY_KEY_SECRET) {
+    if (razorpay_signature && RAZORPAY_KEY_SECRET && !RAZORPAY_KEY_SECRET.includes('XXXXXXXX')) {
       const generated_signature = crypto
         .createHmac('sha256', RAZORPAY_KEY_SECRET)
         .update(`${razorpay_order_id}|${razorpay_payment_id}`)

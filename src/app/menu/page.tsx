@@ -28,9 +28,7 @@ export default function MenuPage() {
         window.alert('Error: ' + (data.error || 'Failed to load menu'))
       }
       setCategories(data.categories || [])
-    } catch (e) { 
-      console.error(e)
-    }
+    } catch (e) { console.error(e) }
     setLoading(false)
   }
 
@@ -74,14 +72,7 @@ export default function MenuPage() {
 
   async function handleSave() {
     const price = parseFloat(form.price)
-    if (!form.name || !form.price) { 
-      window.alert('Please fill name and price')
-      return 
-    }
-    if (!form.categoryId) {
-      window.alert('Please select a category from the dropdown')
-      return
-    }
+    if (!form.name || !form.price || !form.categoryId) { window.alert('Please fill all fields'); return }
     
     let imageUrl = imagePreview
     if (imageFile) {
@@ -94,42 +85,13 @@ export default function MenuPage() {
       }
     }
 
-    try {
-      if (editing) {
-        const res = await fetch('/api/menu/' + editing.id, {method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: form.name, description: form.description, price, image: imageUrl || null})})
-        if (!res.ok) {
-          const data = await res.json()
-          window.alert('Error updating: ' + (data.error || 'Failed'))
-          return
-        }
-        window.alert('Item updated successfully!')
-      } else {
-        const res = await fetch('/api/menu', {
-          method: 'POST', 
-          headers: {'Content-Type':'application/json'}, 
-          body: JSON.stringify({
-            name: form.name, 
-            description: form.description, 
-            price, 
-            image: imageUrl || null, 
-            categoryId: form.categoryId
-          })
-        })
-        const data = await res.json()
-        console.log('Add item response:', res.status, data)
-        
-        if (!res.ok) {
-          window.alert('Error adding: ' + (data.error || 'Failed') + ' (Status: ' + res.status + ')')
-          return
-        }
-        window.alert('Item added successfully!')
-      }
-      setShowModal(false)
-      loadData()
-    } catch (e) {
-      console.error('Error:', e)
-      window.alert('Something went wrong: ' + e)
+    if (editing) {
+      await fetch('/api/menu/' + editing.id, {method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: form.name, description: form.description, price, image: imageUrl || null})})
+    } else {
+      await fetch('/api/menu', {method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({name: form.name, description: form.description, price, image: imageUrl || null, categoryId: form.categoryId})})
     }
+    setShowModal(false)
+    loadData()
   }
 
   async function handleSaveCategory() {
@@ -145,26 +107,13 @@ export default function MenuPage() {
   }
 
   async function handleDelete(id: string) {
-    if (window.confirm('Delete this item?')) {
-      const res = await fetch('/api/menu/' + id, {method: 'DELETE'})
-      if (res.ok) {
-        loadData()
-      } else {
-        const data = await res.json()
-        window.alert('Error: ' + (data.error || 'Failed to delete'))
-      }
-    }
+    if (window.confirm('Delete this item?')) { await fetch('/api/menu/' + id, {method: 'DELETE'}); loadData() }
   }
 
   async function handleDeleteCategory(id: string) {
     if (window.confirm('Delete this category and all its items?')) { 
-      const res = await fetch('/api/menu/category/' + id, {method: 'DELETE'})
-      if (res.ok) {
-        loadData()
-      } else {
-        const data = await res.json()
-        window.alert('Error: ' + (data.error || 'Failed to delete'))
-      }
+      await fetch('/api/menu/category/' + id, {method: 'DELETE'}); 
+      loadData() 
     }
   }
 

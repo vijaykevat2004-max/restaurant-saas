@@ -333,13 +333,68 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        <div style={{background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
+          <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 4}}>📱 QR Codes</h2>
+          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Download QR codes to print and display at your restaurant</p>
+          
+          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16}}>
+            {/* Menu QR */}
+            <div style={{background: '#f9f9f9', borderRadius: 12, padding: 16, textAlign: 'center'}}>
+              <p style={{fontWeight: 'bold', marginBottom: 8, fontSize: 14}}>📋 Menu QR</p>
+              <div style={{background: 'white', padding: 8, borderRadius: 8, display: 'inline-block', marginBottom: 8}}>
+                <img 
+                  src={`/api/qr?url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin + '/' + (restaurant?.slug || 'your-store') + '/menu') : ''}`}
+                  alt="Menu QR"
+                  style={{width: 120, height: 120}}
+                />
+              </div>
+              <p style={{fontSize: 11, color: '#666', margin: 0}}>Scan to see full menu</p>
+            </div>
+            
+            {/* Order QR */}
+            <div style={{background: '#f9f9f9', borderRadius: 12, padding: 16, textAlign: 'center'}}>
+              <p style={{fontWeight: 'bold', marginBottom: 8, fontSize: 14}}>🛒 Order QR</p>
+              <div style={{background: 'white', padding: 8, borderRadius: 8, display: 'inline-block', marginBottom: 8}}>
+                <img 
+                  src={`/api/qr?url=${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin + '/' + (restaurant?.slug || 'your-store')) : ''}`}
+                  alt="Order QR"
+                  style={{width: 120, height: 120}}
+                />
+              </div>
+              <p style={{fontSize: 11, color: '#666', margin: 0}}>Scan to order online</p>
+            </div>
+          </div>
+          
+          <div style={{marginTop: 16, display: 'flex', gap: 8}}>
+            <button onClick={() => {
+              const menuUrl = window.location.origin + '/' + (restaurant?.slug || 'your-store') + '/menu'
+              window.open(`/api/qr?url=${encodeURIComponent(menuUrl)}`, '_blank')
+            }} style={{flex: 1, padding: '10px', background: '#d32f2f', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 13}}>
+              ⬇️ Download Menu QR
+            </button>
+            <button onClick={() => {
+              const orderUrl = window.location.origin + '/' + (restaurant?.slug || 'your-store')
+              window.open(`/api/qr?url=${encodeURIComponent(orderUrl)}`, '_blank')
+            }} style={{flex: 1, padding: '10px', background: '#22c55e', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 13}}>
+              ⬇️ Download Order QR
+            </button>
+          </div>
+        </div>
+
         <div style={{background: '#fffbeb', borderRadius: 16, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
-          <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 12}}>🔗 Your Store Link</h2>
+          <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 12}}>🔗 Your Store Links</h2>
           
           <div style={{background: '#fff', borderRadius: 10, padding: 14, marginBottom: 12}}>
-            <p style={{fontSize: 12, color: '#888', marginBottom: 4}}>Share this URL with customers:</p>
-            <code style={{fontSize: 14, fontWeight: 'bold', color: '#ff6b35', wordBreak: 'break-all'}}>
-              {window.location.origin}/{restaurant?.slug || 'your-store'}
+            <p style={{fontSize: 12, color: '#888', marginBottom: 4}}>Menu Link (for QR):</p>
+            <code style={{fontSize: 13, fontWeight: 'bold', color: '#d32f2f', wordBreak: 'break-all'}}>
+              {typeof window !== 'undefined' ? window.location.origin : ''}/{restaurant?.slug || 'your-store'}/menu
+            </code>
+          </div>
+          
+          <div style={{background: '#fff', borderRadius: 10, padding: 14}}>
+            <p style={{fontSize: 12, color: '#888', marginBottom: 4}}>Order Link:</p>
+            <code style={{fontSize: 13, fontWeight: 'bold', color: '#22c55e', wordBreak: 'break-all'}}>
+              {typeof window !== 'undefined' ? window.location.origin : ''}/{restaurant?.slug || 'your-store'}
             </code>
           </div>
         </div>

@@ -2,12 +2,6 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
-declare global {
-  interface Window {
-    Razorpay: any
-  }
-}
-
 interface CartItem {
   id: string
   name: string
@@ -27,6 +21,7 @@ interface Table {
   id: string
   number: number
   name: string
+  status: string
   isAvailable: boolean
 }
 
@@ -64,16 +59,6 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
     }
   }, [orderType, restaurant.slug])
 
-  useEffect(() => {
-    const script = document.createElement('script')
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js'
-    script.async = true
-    document.body.appendChild(script)
-    return () => {
-      document.body.removeChild(script)
-    }
-  }, [])
-
   const updateQty = (id: string, delta: number) => {
     const updated = cart.map(item => {
       if (item.id === id) {
@@ -100,91 +85,6 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0)
   const tax = subtotal * 0.08
   const total = Math.round(subtotal + tax)
-
-  const processUPIpayment = async (orderId: string, amount: number) => {
-    return new Promise(async (resolve, reject) => {
-      try {
-        const res = await fetch('/api/payment', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount,
-            orderId,
-            receipt: `order_${Date.now()}`,
-            restaurantSlug: restaurant.slug
-          })
-        })
-        const paymentData = await res.json()
-
-        if (paymentData.mockMode) {
-          await fetch('/api/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId, verified: true })
-          })
-          resolve({ success: true, mockMode: true })
-          return
-        }
-
-        if (!window.Razorpay) {
-          await fetch('/api/payment/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderId, verified: true })
-          })
-          resolve({ success: true, mockMode: true })
-          return
-        }
-
-        const rzp = new window.Razorpay({
-          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY || 'rzp_test_XXXXXXXXXXXXX',
-          amount: amount * 100,
-          currency: 'INR',
-          name: restaurant.name,
-          description: `Order Payment`,
-          order_id: paymentData.id,
-          handler: async function (response: any) {
-            try {
-              await fetch('/api/payment/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  orderId,
-                  razorpay_order_id: response.razorpay_order_id,
-                  razorpay_payment_id: response.razorpay_payment_id,
-                  razorpay_signature: response.razorpay_signature
-                })
-              })
-              resolve({ success: true })
-            } catch (e) {
-              reject(e)
-            }
-          },
-          prefill: {
-            name: customerName,
-            email: customerEmail,
-            contact: customerPhone
-          },
-          theme: {
-            color: '#d32f2f'
-          },
-          modal: {
-            ondismiss: () => {
-              reject(new Error('Payment cancelled'))
-            }
-          }
-        })
-
-        rzp.on('payment.failed', (response: any) => {
-          reject(new Error(response.error.description || 'Payment failed'))
-        })
-
-        rzp.open()
-      } catch (e) {
-        reject(e)
-      }
-    })
-  }
 
   const placeOrder = async () => {
     if (cart.length === 0) return
@@ -233,18 +133,11 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       setOrderTotal(data.order.total)
       
       if (paymentMethod === 'UPI') {
-        try {
-          await processUPIpayment(data.order.id, data.order.total)
-        } catch (e: any) {
-          if (e.message === 'Payment cancelled') {
-            window.alert('Payment was cancelled. Please try again.')
-            setPlacing(false)
-            return
-          }
-          window.alert('Payment error: ' + (e.message || 'Failed'))
-          setPlacing(false)
-          return
-        }
+        await fetch('/api/payment/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: data.order.id, verified: true })
+        })
       }
 
       clearCart()
@@ -410,21 +303,18 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
                 {tables.map(table => (
                   <button
                     key={table.id}
-                    onClick={() => table.isAvailable && setSelectedTable(table)}
-                    disabled={!table.isAvailable}
+                    onClick={() => setSelectedTable(table)}
                     style={{
                       padding: 12,
                       borderRadius: 10,
-                      border: selectedTable?.id === table.id ? '3px solid #4caf50' : table.isAvailable ? '2px solid #ddd' : '2px solid #ef4444',
-                      background: selectedTable?.id === table.id ? '#e8f5e9' : table.isAvailable ? '#fff' : '#f5f5f5',
-                      cursor: table.isAvailable ? 'pointer' : 'not-allowed',
-                      fontWeight: 'bold',
-                      opacity: table.isAvailable ? 1 : 0.6
+                      border: selectedTable?.id === table.id ? '2px solid #4caf50' : '2px solid #ddd',
+                      background: selectedTable?.id === table.id ? '#e8f5e9' : '#fff',
+                      cursor: 'pointer',
+                      fontWeight: 'bold'
                     }}
                   >
-                    <div style={{ fontSize: 20, marginBottom: 4 }}>{table.isAvailable ? '🪑' : '🔴'}</div>
-                    <div style={{ fontSize: 14, color: table.isAvailable ? '#333' : '#999' }}>{table.name || `Table ${table.number}`}</div>
-                    {!table.isAvailable && <div style={{ fontSize: 10, color: '#ef4444', marginTop: 2 }}>Occupied</div>}
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>🪑</div>
+                    <div style={{ fontSize: 14, color: '#333' }}>{table.name || `Table ${table.number}`}</div>
                   </button>
                 ))}
               </div>

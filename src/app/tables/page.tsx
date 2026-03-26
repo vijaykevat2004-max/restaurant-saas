@@ -6,7 +6,7 @@ interface Table {
   id: string
   number: number
   name: string | null
-  isOccupied: boolean
+  status: string
 }
 
 export default function TablesPage() {
@@ -15,7 +15,6 @@ export default function TablesPage() {
   const [showModal, setShowModal] = useState(false)
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const [form, setForm] = useState({ number: '', name: '' })
-  const [occupiedTables, setOccupiedTables] = useState<string[]>([])
 
   useEffect(() => {
     loadData()
@@ -23,27 +22,9 @@ export default function TablesPage() {
 
   const loadData = async () => {
     try {
-      const [tablesRes, ordersRes] = await Promise.all([
-        fetch('/api/tables'),
-        fetch('/api/all-orders')
-      ])
-      
-      const tablesData = await tablesRes.json()
-      const ordersData = await ordersRes.json()
-      
-      const orders = Array.isArray(ordersData) ? ordersData : []
-      const activeTables = orders
-        .filter((o: any) => ['PENDING', 'PREPARING', 'READY', 'AWAITING_CASH'].includes(o.status) && o.orderType === 'DINE_IN' && o.tableId)
-        .map((o: any) => o.tableId)
-      
-      setOccupiedTables(activeTables)
-      
-      const tablesWithStatus = (tablesData.tables || []).map((t: any) => ({
-        ...t,
-        isOccupied: activeTables.includes(t.id)
-      }))
-      
-      setTables(tablesWithStatus)
+      const res = await fetch('/api/tables')
+      const data = await res.json()
+      setTables(data.tables || [])
     } catch (e) {
       console.error(e)
     }
@@ -96,12 +77,18 @@ export default function TablesPage() {
     }
   }
 
-  const toggleOccupied = async (table: Table) => {
-    if (!table.isOccupied) {
-      window.alert('Table is already free. Mark orders from the Orders page.')
-      return
+  const toggleStatus = async (table: Table) => {
+    const newStatus = table.status === 'AVAILABLE' ? 'OCCUPIED' : 'AVAILABLE'
+    try {
+      await fetch(`/api/tables?id=${table.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      })
+      loadData()
+    } catch (e) {
+      window.alert('Failed to update status')
     }
-    await loadData()
   }
 
   if (loading) {
@@ -120,7 +107,7 @@ export default function TablesPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <h1 style={{ fontSize: 28, fontWeight: 'bold', margin: 0 }}>Table Management</h1>
-            <p style={{ color: '#666', marginTop: 4 }}>Manage your restaurant tables</p>
+            <p style={{ color: '#666', marginTop: 4 }}>Manage your restaurant tables and status</p>
           </div>
           <button 
             onClick={() => { setEditingTable(null); setForm({ number: '', name: '' }); setShowModal(true) }}
@@ -128,6 +115,22 @@ export default function TablesPage() {
           >
             + Add Table
           </button>
+        </div>
+
+        {/* Legend */}
+        <div style={{ display: 'flex', gap: 16, marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#22c55e' }}></div>
+            <span style={{ fontSize: 13, color: '#666' }}>Available</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#ef4444' }}></div>
+            <span style={{ fontSize: 13, color: '#666' }}>Occupied</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#f59e0b' }}></div>
+            <span style={{ fontSize: 13, color: '#666' }}>Reserved</span>
+          </div>
         </div>
 
         {tables.length === 0 ? (
@@ -144,61 +147,129 @@ export default function TablesPage() {
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16 }}>
-            {tables.map(table => (
-              <div 
-                key={table.id} 
-                style={{ 
-                  background: 'white', 
-                  borderRadius: 16, 
-                  padding: 20, 
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  border: table.isOccupied ? '3px solid #ef4444' : '3px solid #22c55e'
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 48, marginBottom: 8 }}>
-                      {table.isOccupied ? '🪑' : '🪑'}
+            {tables.map(table => {
+              const isAvailable = table.status === 'AVAILABLE'
+              const isOccupied = table.status === 'OCCUPIED'
+              const isReserved = table.status === 'RESERVED'
+              
+              const getStatusColor = () => {
+                if (isAvailable) return { bg: '#dcfce7', border: '#22c55e', text: '#16a34a', label: 'Available' }
+                if (isOccupied) return { bg: '#fee2e2', border: '#ef4444', text: '#dc2626', label: 'Occupied' }
+                return { bg: '#fef3c7', border: '#f59e0b', text: '#d97706', label: 'Reserved' }
+              }
+              
+              const statusStyle = getStatusColor()
+              
+              return (
+                <div 
+                  key={table.id} 
+                  style={{ 
+                    background: 'white', 
+                    borderRadius: 16, 
+                    padding: 20, 
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    border: `3px solid ${statusStyle.border}`
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 48, marginBottom: 8 }}>🪑</div>
+                      <h3 style={{ fontSize: 18, fontWeight: 'bold', margin: 0 }}>{table.name || `Table ${table.number}`}</h3>
+                      <p style={{ color: '#666', fontSize: 14, margin: 0 }}>#{table.number}</p>
                     </div>
-                    <h3 style={{ fontSize: 18, fontWeight: 'bold', margin: 0 }}>{table.name || `Table ${table.number}`}</h3>
-                    <p style={{ color: '#666', fontSize: 14, margin: 0 }}>#{table.number}</p>
+                    <div 
+                      style={{ 
+                        padding: '4px 10px', 
+                        borderRadius: 20, 
+                        fontSize: 12, 
+                        fontWeight: 'bold',
+                        background: statusStyle.bg,
+                        color: statusStyle.text
+                      }}
+                    >
+                      {statusStyle.label}
+                    </div>
                   </div>
-                  <div 
-                    style={{ 
-                      padding: '4px 10px', 
-                      borderRadius: 20, 
-                      fontSize: 12, 
-                      fontWeight: 'bold',
-                      background: table.isOccupied ? '#fee2e2' : '#dcfce7',
-                      color: table.isOccupied ? '#dc2626' : '#16a34a'
-                    }}
-                  >
-                    {table.isOccupied ? '🔴 Occupied' : '🟢 Free'}
+                  
+                  {/* Status Toggle Buttons */}
+                  <div style={{ marginBottom: 12 }}>
+                    <p style={{ fontSize: 11, color: '#888', margin: '0 0 6px 0', fontWeight: 'bold' }}>Change Status:</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
+                      <button 
+                        onClick={() => toggleStatus({ ...table, status: 'AVAILABLE' })}
+                        disabled={isAvailable}
+                        style={{ 
+                          padding: '6px 4px', 
+                          background: isAvailable ? '#22c55e' : '#f5f5f5',
+                          color: isAvailable ? 'white' : '#666',
+                          border: 'none', 
+                          borderRadius: 6, 
+                          cursor: isAvailable ? 'default' : 'pointer', 
+                          fontWeight: 'bold', 
+                          fontSize: 11
+                        }}
+                      >
+                        🟢 Free
+                      </button>
+                      <button 
+                        onClick={() => toggleStatus({ ...table, status: 'OCCUPIED' })}
+                        disabled={isOccupied}
+                        style={{ 
+                          padding: '6px 4px', 
+                          background: isOccupied ? '#ef4444' : '#f5f5f5',
+                          color: isOccupied ? 'white' : '#666',
+                          border: 'none', 
+                          borderRadius: 6, 
+                          cursor: isOccupied ? 'default' : 'pointer', 
+                          fontWeight: 'bold', 
+                          fontSize: 11
+                        }}
+                      >
+                        🔴 Busy
+                      </button>
+                      <button 
+                        onClick={() => toggleStatus({ ...table, status: 'RESERVED' })}
+                        disabled={isReserved}
+                        style={{ 
+                          padding: '6px 4px', 
+                          background: isReserved ? '#f59e0b' : '#f5f5f5',
+                          color: isReserved ? 'white' : '#666',
+                          border: 'none', 
+                          borderRadius: 6, 
+                          cursor: isReserved ? 'default' : 'pointer', 
+                          fontWeight: 'bold', 
+                          fontSize: 11
+                        }}
+                      >
+                        🟡 Booked
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <button 
+                      onClick={() => handleEdit(table)}
+                      style={{ flex: 1, padding: '8px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}
+                    >
+                      Edit
+                    </button>
+                    <button 
+                      onClick={() => handleDelete(table.id)}
+                      style={{ flex: 1, padding: '8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 12 }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-                
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button 
-                    onClick={() => handleEdit(table)}
-                    style={{ flex: 1, padding: '8px', background: '#3b82f6', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 13 }}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(table.id)}
-                    style={{ flex: 1, padding: '8px', background: '#ef4444', color: 'white', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold', fontSize: 13 }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
 
-        <div style={{ marginTop: 24, background: '#fffbeb', borderRadius: 12, padding: 16 }}>
-          <p style={{ color: '#92400e', fontSize: 14, margin: 0 }}>
-            💡 Tables show as "Occupied" when they have active dine-in orders. Tables automatically free up when orders are completed.
+        <div style={{ marginTop: 24, background: '#f0f9ff', borderRadius: 12, padding: 16 }}>
+          <p style={{ color: '#0369a1', fontSize: 14, margin: 0 }}>
+            💡 <strong>Manual Status:</strong> Click the status buttons (Free/Busy/Booked) to manually set table status. 
+            This helps customers see which tables are available for dine-in.
           </p>
         </div>
       </div>

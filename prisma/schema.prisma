@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -30,8 +30,6 @@ model Restaurant {
   email        String?
   openingHours String?
   upiId        String?
-  razorpayKeyId     String?
-  razorpayKeySecret String?
   isActive     Boolean    @default(true)
   categories   Category[]
   orders       Order[]
@@ -45,6 +43,7 @@ model Table {
   id           String     @id @default(cuid())
   number       Int
   name         String?
+  status       String     @default("AVAILABLE")
   restaurantId String
   restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
   orders       Order[]
@@ -113,7 +112,7 @@ model OrderItem {
   orderId      String
   order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItemId   String
-  menuItem     MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  menuItem     MenuItem @relation(fields: [menuItemId], references: [id])
   menuItemName String
   quantity     Int
   price        Float

@@ -26,22 +26,9 @@ export async function GET(req: NextRequest) {
       orderBy: { number: 'asc' },
     })
 
-    const activeOrders = await prisma.order.findMany({
-      where: {
-        restaurantId: restaurant.id,
-        orderType: 'DINE_IN',
-        status: { in: ['PENDING', 'PREPARING', 'READY', 'AWAITING_CASH'] }
-      },
-      select: { tableId: true }
-    })
-
-    const occupiedTableIds = activeOrders
-      .filter(o => o.tableId)
-      .map(o => o.tableId)
-
     const tablesWithStatus = tables.map(table => ({
       ...table,
-      isAvailable: !occupiedTableIds.includes(table.id)
+      isAvailable: table.status === 'AVAILABLE'
     }))
 
     return NextResponse.json({ tables: tablesWithStatus })

@@ -181,47 +181,93 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   }
 
   if (showUPIPayment) {
+    const shareUrl = `https://wa.me/?text=Pay%20₹${orderTotal}%20for%20your%20order%20%23${orderNumber}%20at%20${encodeURIComponent(restaurant.name)}%3A%20${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin + '/' + restaurant.slug + '/pay/' + orderId) : ''}`
+    
     return (
       <div style={{ minHeight: '100vh', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'system-ui, sans-serif' }}>
         <div style={{ background: 'white', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%', textAlign: 'center' }}>
-          <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8, color: '#333' }}>Pay with UPI</h2>
-          <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>Order #{orderNumber} - ₹{orderTotal}</p>
-          
-          <div style={{ background: '#f0f0f0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Pay to this UPI ID:</p>
-            <p style={{ fontSize: 18, fontWeight: 'bold', color: '#d32f2f', margin: 0 }}>{restaurant.upiId || 'yourname@upi'}</p>
+          <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#e8f5e9', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 28 }}>💳</span>
           </div>
           
-          <div style={{ marginBottom: 16 }}>
-            <img 
-              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${restaurant.upiId || 'yourname@upi'}&pn=${restaurant.name}&am=${orderTotal}&cu=INR`}
-              alt="UPI QR Code"
-              style={{ width: 200, height: 200, borderRadius: 12 }}
-            />
+          <h2 style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 4, color: '#333' }}>{restaurant.name}</h2>
+          <p style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>Order #{orderNumber}</p>
+          
+          <div style={{ background: '#fff3e0', borderRadius: 12, padding: 20, marginBottom: 20, border: '2px solid #ff9800' }}>
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Amount to Pay</p>
+            <p style={{ fontSize: 36, fontWeight: 'bold', color: '#d32f2f', margin: 0 }}>₹{orderTotal}</p>
           </div>
           
-          <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, fontWeight: 'bold', color: '#333', display: 'block', marginBottom: 6 }}>Enter Transaction ID after payment:</label>
-            <input 
-              type="text"
-              value={transactionId}
-              onChange={(e) => setTransactionId(e.target.value)}
-              placeholder="e.g., GPay123456"
-              style={{ width: '100%', padding: 12, border: '2px solid #ddd', borderRadius: 8, fontSize: 14, textAlign: 'center', boxSizing: 'border-box' }}
-            />
-          </div>
+          <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
+            Click below to pay securely via UPI
+          </p>
           
-          <button 
-            onClick={confirmUPIPayment}
-            disabled={placing || !transactionId.trim()}
-            style={{ width: '100%', padding: 14, background: placing || !transactionId.trim() ? '#ccc' : '#22c55e', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 'bold', cursor: placing ? 'not-allowed' : 'pointer' }}
+          <a 
+            href={`/${restaurant.slug}/pay/${orderId}`}
+            target="_blank"
+            style={{ 
+              display: 'block',
+              width: '100%', 
+              padding: 16, 
+              background: '#22c55e', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: 12, 
+              fontSize: 18, 
+              fontWeight: 'bold',
+              textDecoration: 'none',
+              textAlign: 'center',
+              cursor: 'pointer',
+              marginBottom: 12
+            }}
           >
-            {placing ? 'Confirming...' : '✅ Confirm Payment'}
-          </button>
+            🔗 Pay Now
+          </a>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            <a 
+              href={shareUrl}
+              target="_blank"
+              style={{ 
+                display: 'block',
+                padding: 12, 
+                background: '#25d366', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: 10, 
+                fontSize: 14, 
+                fontWeight: 'bold',
+                textDecoration: 'none',
+                textAlign: 'center'
+              }}
+            >
+              📱 WhatsApp
+            </a>
+            
+            <button 
+              onClick={() => {
+                const url = window.location.origin + '/' + restaurant.slug + '/pay/' + orderId
+                navigator.clipboard.writeText(url)
+                window.alert('Link copied!')
+              }}
+              style={{ 
+                padding: 12, 
+                background: '#3b82f6', 
+                color: 'white', 
+                border: 'none', 
+                borderRadius: 10, 
+                fontSize: 14, 
+                fontWeight: 'bold',
+                cursor: 'pointer'
+              }}
+            >
+              📋 Copy Link
+            </button>
+          </div>
           
           <button 
-            onClick={() => { setShowUPIPayment(false); setTransactionId(''); }}
-            style={{ width: '100%', padding: 12, background: 'transparent', color: '#666', border: 'none', fontSize: 14, marginTop: 12, cursor: 'pointer' }}
+            onClick={() => { setShowUPIPayment(false); }}
+            style={{ width: '100%', padding: 12, background: 'transparent', color: '#666', border: 'none', fontSize: 14, cursor: 'pointer' }}
           >
             Cancel
           </button>

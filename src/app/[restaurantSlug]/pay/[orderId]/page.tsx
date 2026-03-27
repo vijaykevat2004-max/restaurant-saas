@@ -10,24 +10,49 @@ export default async function PayPage({ params }: PageProps) {
   
   const restaurant = await prisma.restaurant.findUnique({
     where: { slug: restaurantSlug },
-    select: { id: true, name: true, logo: true, upiId: true, phone: true }
+    select: { name: true, logo: true, upiId: true }
   })
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
-    select: { id: true, orderNumber: true, total: true, status: true, paymentStatus: true, customerName: true }
+    select: { id: true, orderNumber: true, total: true, paymentStatus: true }
   })
 
   if (!restaurant || !order) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fafafa', fontFamily: 'system-ui, sans-serif' }}>
-        <div style={{ textAlign: 'center', padding: 40, background: 'white', borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', fontFamily: 'system-ui' }}>
+        <div style={{ textAlign: 'center', padding: 40 }}>
           <h1 style={{ fontSize: 24, marginBottom: 8 }}>❌ Order Not Found</h1>
-          <p style={{ color: '#666' }}>This payment link is invalid or expired.</p>
+          <p style={{ color: '#666' }}>This payment link is invalid.</p>
         </div>
       </div>
     )
   }
 
-  return <McDonaldsPayment restaurant={restaurant} order={order} />
+  if (order.paymentStatus === 'PAID') {
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', fontFamily: 'system-ui' }}>
+        <div style={{ textAlign: 'center', padding: 40 }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: '#22c55e', margin: '0 auto 20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <span style={{ fontSize: 40, color: 'white' }}>✓</span>
+          </div>
+          <h1 style={{ fontSize: 24, color: '#22c55e', marginBottom: 8 }}>Already Paid!</h1>
+          <p style={{ color: '#666', marginBottom: 8 }}>Order #{order.orderNumber}</p>
+          <p style={{ fontSize: 28, fontWeight: 'bold', color: '#d32f2f' }}>₹{order.total}</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <McDonaldsPayment 
+      restaurantName={restaurant.name}
+      restaurantLogo={restaurant.logo}
+      upiId={restaurant.upiId || 'yourname@upi'}
+      amount={order.total}
+      orderNumber={order.orderNumber}
+      orderId={order.id}
+      onSuccess={() => {}}
+    />
+  )
 }

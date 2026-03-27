@@ -34,11 +34,9 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   const [notes, setNotes] = useState('')
   const [placing, setPlacing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [showUPIPayment, setShowUPIPayment] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [orderTotal, setOrderTotal] = useState(0)
   const [orderId, setOrderId] = useState('')
-  const [transactionId, setTransactionId] = useState('')
   const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY'>('TAKEAWAY')
   const [tables, setTables] = useState<Table[]>([])
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
@@ -138,8 +136,7 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       setOrderId(data.order.id)
       
       if (paymentMethod === 'UPI') {
-        setShowUPIPayment(true)
-        setPlacing(false)
+        window.location.href = `/${restaurant.slug}/pay/${data.order.id}`
         return
       }
       
@@ -155,125 +152,6 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       window.alert('Failed to place order')
     }
     setPlacing(false)
-  }
-
-  const confirmUPIPayment = async () => {
-    if (!transactionId.trim()) {
-      window.alert('Please enter Transaction ID')
-      return
-    }
-    
-    setPlacing(true)
-    try {
-      await fetch('/api/payment/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId, verified: true, paymentId: transactionId })
-      })
-      clearCart()
-      setShowUPIPayment(false)
-      setTransactionId('')
-      setShowSuccess(true)
-    } catch (e) {
-      window.alert('Failed to confirm payment')
-    }
-    setPlacing(false)
-  }
-
-  if (showUPIPayment) {
-    const shareUrl = `https://wa.me/?text=Pay%20₹${orderTotal}%20for%20your%20order%20%23${orderNumber}%20at%20${encodeURIComponent(restaurant.name)}%3A%20${typeof window !== 'undefined' ? encodeURIComponent(window.location.origin + '/' + restaurant.slug + '/pay/' + orderId) : ''}`
-    
-    return (
-      <div style={{ minHeight: '100vh', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'system-ui, sans-serif' }}>
-        <div style={{ background: 'white', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%', textAlign: 'center' }}>
-          <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#e8f5e9', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontSize: 28 }}>💳</span>
-          </div>
-          
-          <h2 style={{ fontSize: 22, fontWeight: 'bold', marginBottom: 4, color: '#333' }}>{restaurant.name}</h2>
-          <p style={{ fontSize: 14, color: '#666', marginBottom: 8 }}>Order #{orderNumber}</p>
-          
-          <div style={{ background: '#fff3e0', borderRadius: 12, padding: 20, marginBottom: 20, border: '2px solid #ff9800' }}>
-            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Amount to Pay</p>
-            <p style={{ fontSize: 36, fontWeight: 'bold', color: '#d32f2f', margin: 0 }}>₹{orderTotal}</p>
-          </div>
-          
-          <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
-            Click below to pay securely via UPI
-          </p>
-          
-          <a 
-            href={`/${restaurant.slug}/pay/${orderId}`}
-            target="_blank"
-            style={{ 
-              display: 'block',
-              width: '100%', 
-              padding: 16, 
-              background: '#22c55e', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: 12, 
-              fontSize: 18, 
-              fontWeight: 'bold',
-              textDecoration: 'none',
-              textAlign: 'center',
-              cursor: 'pointer',
-              marginBottom: 12
-            }}
-          >
-            🔗 Pay Now
-          </a>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
-            <a 
-              href={shareUrl}
-              target="_blank"
-              style={{ 
-                display: 'block',
-                padding: 12, 
-                background: '#25d366', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: 10, 
-                fontSize: 14, 
-                fontWeight: 'bold',
-                textDecoration: 'none',
-                textAlign: 'center'
-              }}
-            >
-              📱 WhatsApp
-            </a>
-            
-            <button 
-              onClick={() => {
-                const url = window.location.origin + '/' + restaurant.slug + '/pay/' + orderId
-                navigator.clipboard.writeText(url)
-                window.alert('Link copied!')
-              }}
-              style={{ 
-                padding: 12, 
-                background: '#3b82f6', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: 10, 
-                fontSize: 14, 
-                fontWeight: 'bold',
-                cursor: 'pointer'
-              }}
-            >
-              📋 Copy Link
-            </button>
-          </div>
-          
-          <button 
-            onClick={() => { setShowUPIPayment(false); }}
-            style={{ width: '100%', padding: 12, background: 'transparent', color: '#666', border: 'none', fontSize: 14, cursor: 'pointer' }}
-          >
-            Cancel
-          </button>
-        </div>
-      </div>
-    )
   }
 
   if (showSuccess) {

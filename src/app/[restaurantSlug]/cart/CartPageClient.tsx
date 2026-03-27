@@ -15,6 +15,7 @@ interface Restaurant {
   name: string
   slug: string
   logo: string | null
+  upiId: string | null
 }
 
 interface Table {
@@ -33,8 +34,11 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
   const [notes, setNotes] = useState('')
   const [placing, setPlacing] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [showUPIPayment, setShowUPIPayment] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [orderTotal, setOrderTotal] = useState(0)
+  const [orderId, setOrderId] = useState('')
+  const [transactionId, setTransactionId] = useState('')
   const [orderType, setOrderType] = useState<'DINE_IN' | 'TAKEAWAY'>('TAKEAWAY')
   const [tables, setTables] = useState<Table[]>([])
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
@@ -131,14 +135,19 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       const data = await res.json()
       setOrderNumber(data.order.orderNumber)
       setOrderTotal(data.order.total)
+      setOrderId(data.order.id)
       
       if (paymentMethod === 'UPI') {
-        await fetch('/api/payment/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: data.order.id, verified: true })
-        })
+        setShowUPIPayment(true)
+        setPlacing(false)
+        return
       }
+      
+      await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: data.order.id, verified: true })
+      })
 
       clearCart()
       setShowSuccess(true)
@@ -146,6 +155,79 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       window.alert('Failed to place order')
     }
     setPlacing(false)
+  }
+
+  const confirmUPIPayment = async () => {
+    if (!transactionId.trim()) {
+      window.alert('Please enter Transaction ID')
+      return
+    }
+    
+    setPlacing(true)
+    try {
+      await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId, verified: true, paymentId: transactionId })
+      })
+      clearCart()
+      setShowUPIPayment(false)
+      setTransactionId('')
+      setShowSuccess(true)
+    } catch (e) {
+      window.alert('Failed to confirm payment')
+    }
+    setPlacing(false)
+  }
+
+  if (showUPIPayment) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20, fontFamily: 'system-ui, sans-serif' }}>
+        <div style={{ background: 'white', borderRadius: 16, padding: 24, maxWidth: 400, width: '100%', textAlign: 'center' }}>
+          <h2 style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 8, color: '#333' }}>Pay with UPI</h2>
+          <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>Order #{orderNumber} - ₹{orderTotal}</p>
+          
+          <div style={{ background: '#f0f0f0', borderRadius: 12, padding: 20, marginBottom: 20 }}>
+            <p style={{ fontSize: 12, color: '#888', marginBottom: 4 }}>Pay to this UPI ID:</p>
+            <p style={{ fontSize: 18, fontWeight: 'bold', color: '#d32f2f', margin: 0 }}>{restaurant.upiId || 'yourname@upi'}</p>
+          </div>
+          
+          <div style={{ marginBottom: 16 }}>
+            <img 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${restaurant.upiId || 'yourname@upi'}&pn=${restaurant.name}&am=${orderTotal}&cu=INR`}
+              alt="UPI QR Code"
+              style={{ width: 200, height: 200, borderRadius: 12 }}
+            />
+          </div>
+          
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ fontSize: 12, fontWeight: 'bold', color: '#333', display: 'block', marginBottom: 6 }}>Enter Transaction ID after payment:</label>
+            <input 
+              type="text"
+              value={transactionId}
+              onChange={(e) => setTransactionId(e.target.value)}
+              placeholder="e.g., GPay123456"
+              style={{ width: '100%', padding: 12, border: '2px solid #ddd', borderRadius: 8, fontSize: 14, textAlign: 'center', boxSizing: 'border-box' }}
+            />
+          </div>
+          
+          <button 
+            onClick={confirmUPIPayment}
+            disabled={placing || !transactionId.trim()}
+            style={{ width: '100%', padding: 14, background: placing || !transactionId.trim() ? '#ccc' : '#22c55e', color: 'white', border: 'none', borderRadius: 8, fontSize: 16, fontWeight: 'bold', cursor: placing ? 'not-allowed' : 'pointer' }}
+          >
+            {placing ? 'Confirming...' : '✅ Confirm Payment'}
+          </button>
+          
+          <button 
+            onClick={() => { setShowUPIPayment(false); setTransactionId(''); }}
+            style={{ width: '100%', padding: 12, background: 'transparent', color: '#666', border: 'none', fontSize: 14, marginTop: 12, cursor: 'pointer' }}
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    )
   }
 
   if (showSuccess) {
@@ -158,7 +240,7 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
           <h1 style={{ fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 8 }}>Order Placed!</h1>
           <p style={{ fontSize: 16, color: '#666', marginBottom: 4 }}>Order #{orderNumber}</p>
           <p style={{ fontSize: 28, fontWeight: 'bold', color: '#d32f2f', marginBottom: 16 }}>₹{orderTotal}</p>
-          <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Your order is being prepared!</p>
+          <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Payment confirmed! Your order is being prepared.</p>
           <Link href={`/${restaurant.slug}`} style={{ 
             background: '#d32f2f', 
             color: 'white', 

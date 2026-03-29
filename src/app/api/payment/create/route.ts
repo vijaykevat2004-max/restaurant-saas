@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 const CASHFREE_BASE_URL = process.env.CASHFREE_ENV === 'production' 
-  ? 'https://api.cashfree.com/payments/api/v2'
-  : 'https://sandbox.cashfree.com/payments/api/v2'
+  ? 'https://api.cashfree.com/pg'
+  : 'https://sandbox.cashfree.com/pg'
 
 export async function POST(req: NextRequest) {
   try {
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         'Content-Type': 'application/json',
         'x-client-id': appId,
         'x-client-secret': secretKey,
-        'x-api-version': '2023-08-01'
+        'x-api-version': '2025-01-01'
       },
       body: JSON.stringify(payload)
     })
@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         cfOrderId: data.cf_order_id || cfOrderId,
         paymentSessionId: data.payment_session_id,
+        publishableKey: appId,
         amount: order.total
       })
     }

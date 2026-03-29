@@ -89,7 +89,8 @@ export default function PaymentPage() {
 
       if (data.paymentSessionId) {
         const cashfree = new window.Cashfree({
-          mode: 'sandbox'
+          mode: 'sandbox',
+          publishableKey: data.publishableKey
         })
         
         cashfree.checkout({

@@ -146,13 +146,14 @@ export default function KitchenPage() {
   const awaitingCash = orders.filter(o => o.status === 'AWAITING_CASH')
   const preparing = orders.filter(o => o.status === 'PREPARING')
   const ready = orders.filter(o => o.status === 'READY')
+  const awaitingPayment = orders.filter(o => o.status === 'AWAITING_PAYMENT')
   
   const getMinutes = (date: string) => Math.floor((Date.now() - new Date(date).getTime()) / 60000)
   
   const OrderCard = ({ order, status }: { order: Order, status: string }) => {
     const isDineIn = order.orderType === 'DINE_IN'
-    const borderColor = status === 'PENDING' ? '#e74c3c' : status === 'AWAITING_CASH' ? '#9b59b6' : status === 'PREPARING' ? '#f39c12' : '#27ae60'
-    const bgColor = status === 'PENDING' ? '#e74c3c' : status === 'AWAITING_CASH' ? '#9b59b6' : status === 'PREPARING' ? '#f39c12' : '#27ae60'
+    const borderColor = status === 'PENDING' ? '#e74c3c' : status === 'AWAITING_CASH' ? '#9b59b6' : status === 'PREPARING' ? '#f39c12' : status === 'AWAITING_PAYMENT' ? '#636e72' : '#27ae60'
+    const bgColor = status === 'PENDING' ? '#e74c3c' : status === 'AWAITING_CASH' ? '#9b59b6' : status === 'PREPARING' ? '#f39c12' : status === 'AWAITING_PAYMENT' ? '#636e72' : '#27ae60'
     
     return (
       <div style={{ background: '#16213e', borderRadius: 12, padding: 16, marginBottom: 12, borderLeft: `6px solid ${borderColor}` }}>
@@ -196,6 +197,23 @@ export default function KitchenPage() {
           </div>
         )}
         
+        {status === 'AWAITING_PAYMENT' && (
+          <button onClick={async () => {
+            await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                orderId: order.id, 
+                paymentId: `manual_${Date.now()}`, 
+                verified: true 
+              })
+            })
+            loadOrders()
+          }} style={{ 
+            width: '100%', padding: '14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: 14, background: '#25D366', color: 'white' 
+          }}>✓ VERIFY PAYMENT</button>
+        )}
+        
         {status === 'PENDING' && (
           <button onClick={() => updateStatus(order.id, 'PREPARING')} style={{ 
             width: '100%', padding: '14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: 16, background: '#f39c12', color: 'white' 
@@ -237,7 +255,16 @@ export default function KitchenPage() {
             <div style={{ fontSize: 24, color: '#aaa' }}>Waiting for orders...</div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, overflowX: 'auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 20, overflowX: 'auto' }}>
+            {/* Awaiting Payment Column */}
+            <div>
+              <div style={{ background: '#636e72', padding: 16, borderRadius: 12, marginBottom: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 24, fontWeight: 'bold' }}>⏳ PAYMENT</div>
+                <div style={{ fontSize: 18, opacity: 0.9 }}>{awaitingPayment.length} orders</div>
+              </div>
+              {awaitingPayment.map(order => <OrderCard key={order.id} order={order} status="AWAITING_PAYMENT" />)}
+            </div>
+            
             {/* Pending Column */}
             <div>
               <div style={{ background: '#e74c3c', padding: 16, borderRadius: 12, marginBottom: 16, textAlign: 'center' }}>

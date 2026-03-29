@@ -18,10 +18,13 @@ export default function SettingsPage() {
     address: '',
     email: '',
     openingHours: '',
-    logo: ''
+    logo: '',
+    whatsappNumber: ''
   })
   
   const [upiId, setUpiId] = useState('')
+  const [paymentMode, setPaymentMode] = useState('own_upi')
+  const [whatsappNumber, setWhatsappNumber] = useState('')
 
   useEffect(() => {
     loadSettings()
@@ -40,14 +43,17 @@ export default function SettingsPage() {
           address: menuData.restaurant.address || '',
           email: menuData.restaurant.email || '',
           openingHours: menuData.restaurant.openingHours || '',
-          logo: menuData.restaurant.logo || ''
+          logo: menuData.restaurant.logo || '',
+          whatsappNumber: menuData.restaurant.whatsappNumber || ''
         })
         setLogoPreview(menuData.restaurant.logo || null)
       }
       
       const upiRes = await fetch('/api/upi')
       const upiData = await upiRes.json()
-      setUpiId(upiData.upiId || '')
+        setUpiId(upiData.upiId || '')
+        setPaymentMode(menuData.restaurant.paymentMode || 'own_upi')
+        setWhatsappNumber(menuData.restaurant.whatsappNumber || '')
     } catch (e) {
       console.error(e)
     }
@@ -241,9 +247,14 @@ export default function SettingsPage() {
               <input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="+91 98765 43210" />
             </div>
             <div style={{marginBottom: 14}}>
-              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#555', fontSize: 13}}>Email</label>
-              <input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="contact@restaurant.com" />
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#555', fontSize: 13}}>WhatsApp</label>
+              <input value={form.whatsappNumber} onChange={(e) => setForm({...form, whatsappNumber: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="919876543210" />
             </div>
+          </div>
+          
+          <div style={{marginBottom: 14}}>
+            <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#555', fontSize: 13}}>Email</label>
+            <input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="contact@restaurant.com" />
           </div>
           
           <div style={{marginBottom: 14}}>
@@ -262,21 +273,63 @@ export default function SettingsPage() {
         </div>
 
         <div style={{background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
-          <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 4}}>Payment Settings</h2>
-          <p style={{color: '#888', fontSize: 13, marginBottom: 14}}>Set up your UPI for receiving payments</p>
+          <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 4}}>💳 Payment Settings</h2>
+          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Choose how you want to receive payments</p>
           
-          <div style={{background: '#e8f5e9', borderRadius: 10, padding: 16, marginBottom: 16}}>
-            <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>📱 UPI Payment</p>
+          <div style={{marginBottom: 16}}>
+            <label style={{display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#333', fontSize: 14}}>Payment Method</label>
             
-            <div style={{marginBottom: 12}}>
-              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Your UPI ID</label>
-              <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="yourname@upi" />
+            <div style={{display: 'flex', gap: 12, marginBottom: 12}}>
+              <div 
+                onClick={() => setPaymentMode('own_upi')}
+                style={{
+                  flex: 1, padding: 14, borderRadius: 10, border: paymentMode === 'own_upi' ? '2px solid #22c55e' : '2px solid #e0e0e0',
+                  background: paymentMode === 'own_upi' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
+                }}
+              >
+                <div style={{fontSize: 24, marginBottom: 4}}>💰</div>
+                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'own_upi' ? '#22c55e' : '#333'}}>My Own UPI</div>
+                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Money to my UPI</div>
+              </div>
+              
+              <div 
+                onClick={() => setPaymentMode('platform')}
+                style={{
+                  flex: 1, padding: 14, borderRadius: 10, border: paymentMode === 'platform' ? '2px solid #22c55e' : '2px solid #e0e0e0',
+                  background: paymentMode === 'platform' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
+                }}
+              >
+                <div style={{fontSize: 24, marginBottom: 4}}>🏦</div>
+                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'platform' ? '#22c55e' : '#333'}}>Platform Pay</div>
+                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Auto payment</div>
+              </div>
             </div>
-            
-            <button onClick={handleSaveUPI} disabled={saving} style={{background: '#2e7d32', color: 'white', padding: '10px 20px', borderRadius: 8, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 13}}>
-              {saving ? 'Saving...' : '💾 Save UPI'}
-            </button>
           </div>
+          
+          {paymentMode === 'own_upi' && (
+            <div style={{background: '#e8f5e9', borderRadius: 10, padding: 16}}>
+              <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>📱 Receive Directly to Your UPI</p>
+              <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 10}}>Customers pay directly to YOUR UPI. Money goes straight to your account.</p>
+              
+              <div style={{marginBottom: 12}}>
+                <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Your UPI ID</label>
+                <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="yourname@ybl" />
+              </div>
+              <p style={{fontSize: 11, color: '#666', marginBottom: 10}}>Example: yourname@ybl, yourname@oksbi</p>
+            </div>
+          )}
+          
+          {paymentMode === 'platform' && (
+            <div style={{background: '#fff3cd', borderRadius: 10, padding: 16}}>
+              <p style={{fontWeight: 'bold', color: '#856404', marginBottom: 10, fontSize: 14}}>🏦 Platform Payment Gateway</p>
+              <p style={{fontSize: 12, color: '#856404', marginBottom: 10}}>Payments processed by platform. Platform settles to your account (minus commission).</p>
+              <p style={{fontSize: 11, color: '#666', marginBottom: 0}}>Available soon. Platform admin will configure this.</p>
+            </div>
+          )}
+          
+          <button onClick={handleSaveUPI} disabled={saving} style={{background: '#22c55e', color: 'white', padding: '12px 24px', borderRadius: 10, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 14, marginTop: 16}}>
+            {saving ? 'Saving...' : '💾 Save Payment Settings'}
+          </button>
         </div>
 
         <div style={{background: '#fffbeb', borderRadius: 16, padding: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>

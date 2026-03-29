@@ -8,21 +8,26 @@ interface PageProps {
 export default async function RestaurantPage({ params }: PageProps) {
   const { restaurantSlug } = await params
   
-  const restaurant = await prisma.restaurant.findUnique({
-    where: { slug: restaurantSlug },
-    include: {
-      categories: {
-        where: { isActive: true },
-        orderBy: { displayOrder: 'asc' },
-        include: {
-          menuItems: {
-            where: { isAvailable: true },
-            orderBy: { displayOrder: 'asc' }
+  let restaurant = null
+  try {
+    restaurant = await prisma.restaurant.findUnique({
+      where: { slug: restaurantSlug },
+      include: {
+        categories: {
+          where: { isActive: true },
+          orderBy: { displayOrder: 'asc' },
+          include: {
+            menuItems: {
+              where: { isAvailable: true },
+              orderBy: { displayOrder: 'asc' }
+            }
           }
         }
       }
-    }
-  })
+    })
+  } catch (e) {
+    console.error('Error loading restaurant:', e)
+  }
 
   if (!restaurant) {
     return (
@@ -30,7 +35,10 @@ export default async function RestaurantPage({ params }: PageProps) {
         <div style={{ textAlign: 'center', padding: 40 }}>
           <h1 style={{ fontSize: 48, marginBottom: 16 }}>🍽️</h1>
           <h1 style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 8 }}>Restaurant Not Found</h1>
-          <p style={{ color: '#666' }}>This restaurant doesn't exist or is not available.</p>
+          <p style={{ color: '#666', marginBottom: 16 }}>This restaurant doesn't exist or is not available.</p>
+          <a href="/" style={{ background: '#d32f2f', color: 'white', padding: '12px 24px', borderRadius: 8, textDecoration: 'none' }}>
+            Go Home
+          </a>
         </div>
       </div>
     )

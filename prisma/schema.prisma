@@ -26,10 +26,12 @@ model Restaurant {
   description  String?
   logo         String?
   address      String?
-  phone        String?
-  email        String?
-  openingHours String?
-  upiId        String?
+  phone           String?
+  email           String?
+  openingHours    String?
+  upiId           String?
+  paymentMode     String     @default("own_upi")
+  whatsappNumber  String?
   isActive     Boolean    @default(true)
   categories   Category[]
   orders       Order[]

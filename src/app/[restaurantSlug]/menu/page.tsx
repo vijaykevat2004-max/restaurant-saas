@@ -38,7 +38,6 @@ export default async function QRMenuPage({ params }: PageProps) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
-      {/* Header */}
       <div style={{ 
         background: 'linear-gradient(135deg, #d32f2f 0%, #f44336 100%)',
         padding: '20px',
@@ -68,7 +67,6 @@ export default async function QRMenuPage({ params }: PageProps) {
         )}
       </div>
 
-      {/* Menu Content */}
       <div style={{ maxWidth: 600, margin: '0 auto', padding: '16px' }}>
         {restaurant.categories.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
@@ -136,7 +134,6 @@ export default async function QRMenuPage({ params }: PageProps) {
           ))
         )}
 
-        {/* Footer */}
         <div style={{ 
           textAlign: 'center', 
           padding: '24px 0',

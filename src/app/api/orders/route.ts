@@ -103,14 +103,11 @@ export async function POST(req: NextRequest) {
     })
     const orderNumber = String((parseInt(lastOrder?.orderNumber || '1000') + 1))
 
-    let initialStatus = 'PENDING'
+    let initialStatus = 'AWAITING_PAYMENT'
     let paymentStatus = 'PENDING'
 
     if (orderType === 'DINE_IN' && paymentMethod === 'CASH') {
       initialStatus = 'AWAITING_CASH'
-      paymentStatus = 'PENDING'
-    } else if (paymentMethod === 'ONLINE') {
-      initialStatus = 'PENDING'
       paymentStatus = 'PENDING'
     }
 

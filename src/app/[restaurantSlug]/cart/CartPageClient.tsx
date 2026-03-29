@@ -135,19 +135,27 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
       setOrderTotal(data.order.total)
       setOrderId(data.order.id)
       
+      setOrderNumber(data.order.orderNumber)
+      setOrderTotal(data.order.total)
+      setOrderId(data.order.id)
+      
       if (paymentMethod === 'UPI') {
         window.location.href = `/${restaurant.slug}/pay/${data.order.id}`
         return
       }
       
-      await fetch('/api/payment/verify', {
+      const verifyRes = await fetch('/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orderId: data.order.id, verified: true })
       })
 
-      clearCart()
-      setShowSuccess(true)
+      if (verifyRes.ok) {
+        clearCart()
+        setShowSuccess(true)
+      } else {
+        window.alert('Payment verification failed. Please try again.')
+      }
     } catch (e) {
       window.alert('Failed to place order')
     }
@@ -164,7 +172,7 @@ export default function CartPageClient({ restaurant }: { restaurant: Restaurant 
           <h1 style={{ fontSize: 24, fontWeight: 'bold', color: '#333', marginBottom: 8 }}>Order Placed!</h1>
           <p style={{ fontSize: 16, color: '#666', marginBottom: 4 }}>Order #{orderNumber}</p>
           <p style={{ fontSize: 28, fontWeight: 'bold', color: '#d32f2f', marginBottom: 16 }}>₹{orderTotal}</p>
-          <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Payment confirmed! Your order is being prepared.</p>
+          <p style={{ fontSize: 14, color: '#888', marginBottom: 24 }}>Payment received! Your order is being prepared.</p>
           <Link href={`/${restaurant.slug}`} style={{ 
             background: '#d32f2f', 
             color: 'white', 

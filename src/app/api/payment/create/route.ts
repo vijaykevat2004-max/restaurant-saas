@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import CF from 'cashfree-pg'
+import { Cashfree, CFEnvironment } from 'cashfree-pg'
 
 export async function POST(req: NextRequest) {
   try {
@@ -28,18 +28,19 @@ export async function POST(req: NextRequest) {
     let appId: string
     let secretKey: string
     let isRestaurantOwn: boolean = false
+    let env: CFEnvironment
 
     if (order.restaurant.cashfreeAppId && order.restaurant.cashfreeSecret) {
       appId = order.restaurant.cashfreeAppId
       secretKey = order.restaurant.cashfreeSecret
       isRestaurantOwn = true
-      CF.Config.XEnvironment = CF.Environment.SANDBOX
+      env = CFEnvironment.SANDBOX
     } else {
       appId = process.env.CASHFREE_APP_ID!
       secretKey = process.env.CASHFREE_SECRET_KEY!
-      CF.Config.XEnvironment = process.env.CASHFREE_ENV === 'production' 
-        ? CF.Environment.PRODUCTION 
-        : CF.Environment.SANDBOX
+      env = process.env.CASHFREE_ENV === 'production' 
+        ? CFEnvironment.PRODUCTION 
+        : CFEnvironment.SANDBOX
     }
 
     if (!appId || !secretKey) {
@@ -49,8 +50,7 @@ export async function POST(req: NextRequest) {
       }, { status: 503 })
     }
 
-    CF.Config.XClientId = appId
-    CF.Config.XClientSecret = secretKey
+    const cf = new Cashfree(env, appId, secretKey)
 
     const cfOrderId = `ORD_${order.orderNumber}_${Date.now()}`
     const customerId = `cust_${order.id.slice(-10)}`
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       ? `https://restaurant-saas-vijay19.vercel.app/api/payment/webhook?restaurantId=${order.restaurantId}`
       : `https://restaurant-saas-vijay19.vercel.app/api/payment/webhook`
 
-    const request = {
+    const response = await cf.PGCreateOrder({
       order_id: cfOrderId,
       order_amount: order.total,
       order_currency: 'INR',
@@ -78,11 +78,8 @@ export async function POST(req: NextRequest) {
         return_url: `https://restaurant-saas-vijay19.vercel.app/${order.restaurant.slug}/pay/${orderId}?success=1`,
         notify_url: webhookUrl
       }
-    }
+    })
 
-    console.log('Creating Cashfree order:', { cfOrderId, amount: order.total, isRestaurantOwn })
-
-    const response = await CF.PGCreateOrder(request)
     const data = response.data
 
     console.log('Cashfree API response:', JSON.stringify(data))
@@ -99,7 +96,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       error: 'Failed to create payment',
-      message: data.message || 'Unexpected response from Cashfree'
+      message: 'Unexpected response from Cashfree'
     }, { status: 500 })
   } catch (error: any) {
     console.error('Cashfree SDK error:', error)

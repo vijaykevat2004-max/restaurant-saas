@@ -80,10 +80,12 @@ export default function PaymentPage() {
       const data = await res.json()
       
       if (data.error) {
-        alert(data.message || data.error)
+        alert(`${data.error}: ${data.message || 'Please try again'}`)
         setProcessing(false)
         return
       }
+
+      console.log('Payment data:', data)
 
       if (data.paymentSessionId) {
         const cashfree = new window.Cashfree({

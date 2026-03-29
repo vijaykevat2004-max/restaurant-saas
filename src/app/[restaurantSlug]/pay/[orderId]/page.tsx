@@ -87,15 +87,17 @@ export default function PaymentPage() {
 
       if (data.paymentSessionId) {
         const cashfree = new window.Cashfree({
-          mode: process.env.NEXT_PUBLIC_CASHFREE_ENV === 'production' ? 'production' : 'sandbox'
+          mode: 'sandbox'
         })
         
         cashfree.checkout({
           paymentSessionId: data.paymentSessionId,
-          returnUrl: `https://restaurant-saas-vijay19.vercel.app/${restaurantSlug}/pay/${orderId}?success=1`
+          returnUrl: `https://restaurant-saas-vijay19.vercel.app/${restaurantSlug}/pay/${orderId}?success=1`,
+          components: ['card', 'upi', 'netbanking', 'wallet'],
         })
       }
     } catch (e) {
+      console.error('Payment error:', e)
       alert('Payment error. Please try again.')
     }
     setProcessing(false)

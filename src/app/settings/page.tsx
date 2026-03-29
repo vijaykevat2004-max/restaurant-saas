@@ -25,6 +25,8 @@ export default function SettingsPage() {
   const [upiId, setUpiId] = useState('')
   const [paymentMode, setPaymentMode] = useState('own_upi')
   const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [cashfreeAppId, setCashfreeAppId] = useState('')
+  const [cashfreeSecret, setCashfreeSecret] = useState('')
 
   useEffect(() => {
     loadSettings()
@@ -52,8 +54,10 @@ export default function SettingsPage() {
       const upiRes = await fetch('/api/upi')
       const upiData = await upiRes.json()
         setUpiId(upiData.upiId || '')
-        setPaymentMode(menuData.restaurant.paymentMode || 'own_upi')
+        setPaymentMode(upiData.paymentMode || 'own_upi')
         setWhatsappNumber(menuData.restaurant.whatsappNumber || '')
+        setCashfreeAppId(upiData.cashfreeAppId || '')
+        setCashfreeSecret(upiData.cashfreeSecret ? '••••••••' : '')
     } catch (e) {
       console.error(e)
     }
@@ -134,16 +138,22 @@ export default function SettingsPage() {
       const res = await fetch('/api/upi', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ upiId })
+        body: JSON.stringify({ 
+          upiId, 
+          paymentMode,
+          cashfreeAppId,
+          cashfreeSecret
+        })
       })
       
       if (res.ok) {
-        setMessage('UPI settings saved!')
+        setMessage('Payment settings saved!')
       } else {
-        setMessage('Failed to save UPI settings')
+        const data = await res.json()
+        setMessage('Error: ' + (data.error || 'Failed to save'))
       }
     } catch (e) {
-      setMessage('Error saving UPI settings')
+      setMessage('Error saving payment settings')
     }
     
     setSaving(false)
@@ -274,22 +284,22 @@ export default function SettingsPage() {
 
         <div style={{background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
           <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 4}}>💳 Payment Settings</h2>
-          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Choose how you want to receive payments</p>
+          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Receive payments directly to your account</p>
           
           <div style={{marginBottom: 16}}>
             <label style={{display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#333', fontSize: 14}}>Payment Method</label>
             
             <div style={{display: 'flex', gap: 12, marginBottom: 12}}>
               <div 
-                onClick={() => setPaymentMode('own_upi')}
+                onClick={() => setPaymentMode('own_cashfree')}
                 style={{
-                  flex: 1, padding: 14, borderRadius: 10, border: paymentMode === 'own_upi' ? '2px solid #22c55e' : '2px solid #e0e0e0',
-                  background: paymentMode === 'own_upi' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
+                  flex: 1, padding: 14, borderRadius: 10, border: paymentMode === 'own_cashfree' ? '2px solid #22c55e' : '2px solid #e0e0e0',
+                  background: paymentMode === 'own_cashfree' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
                 }}
               >
                 <div style={{fontSize: 24, marginBottom: 4}}>💰</div>
-                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'own_upi' ? '#22c55e' : '#333'}}>My Own UPI</div>
-                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Money to my UPI</div>
+                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'own_cashfree' ? '#22c55e' : '#333'}}>My Cashfree</div>
+                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Your own account</div>
               </div>
               
               <div 
@@ -301,29 +311,42 @@ export default function SettingsPage() {
               >
                 <div style={{fontSize: 24, marginBottom: 4}}>🏦</div>
                 <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'platform' ? '#22c55e' : '#333'}}>Platform Pay</div>
-                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Auto payment</div>
+                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Auto settlement</div>
               </div>
             </div>
           </div>
           
-          {paymentMode === 'own_upi' && (
+          {paymentMode === 'own_cashfree' && (
             <div style={{background: '#e8f5e9', borderRadius: 10, padding: 16}}>
-              <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>📱 Receive Directly to Your UPI</p>
-              <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 10}}>Customers pay directly to YOUR UPI. Money goes straight to your account.</p>
+              <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>📱 Your Own Cashfree Account</p>
+              <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 12}}>Get paid directly to your Cashfree account. Money transfers to your UPI/bank.</p>
               
               <div style={{marginBottom: 12}}>
-                <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Your UPI ID</label>
-                <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="yourname@ybl" />
+                <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Cashfree App ID</label>
+                <input value={cashfreeAppId} onChange={(e) => setCashfreeAppId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="Your Cashfree App ID (e.g., TEST...)" />
               </div>
-              <p style={{fontSize: 11, color: '#666', marginBottom: 10}}>Example: yourname@ybl, yourname@oksbi</p>
+              
+              <div style={{marginBottom: 12}}>
+                <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Cashfree Secret Key</label>
+                <input type="password" value={cashfreeSecret} onChange={(e) => setCashfreeSecret(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="cfsk_ma_test_..." />
+              </div>
+              
+              <div style={{background: '#c8e6c9', borderRadius: 8, padding: 12, marginTop: 12}}>
+                <p style={{fontSize: 11, color: '#2e7d32', marginBottom: 6}}><strong>How to get Cashfree credentials:</strong></p>
+                <ol style={{fontSize: 11, color: '#2e7d32', margin: 0, paddingLeft: 16, lineHeight: 1.6}}>
+                  <li>Go to <a href="https://www.cashfree.com" target="_blank" style={{color: '#1b5e20'}}>cashfree.com</a> and sign up</li>
+                  <li>Get sandbox credentials from Dashboard → Developers</li>
+                  <li>Copy App ID and Secret Key here</li>
+                </ol>
+              </div>
             </div>
           )}
           
           {paymentMode === 'platform' && (
             <div style={{background: '#fff3cd', borderRadius: 10, padding: 16}}>
               <p style={{fontWeight: 'bold', color: '#856404', marginBottom: 10, fontSize: 14}}>🏦 Platform Payment Gateway</p>
-              <p style={{fontSize: 12, color: '#856404', marginBottom: 10}}>Payments processed by platform. Platform settles to your account (minus commission).</p>
-              <p style={{fontSize: 11, color: '#666', marginBottom: 0}}>Available soon. Platform admin will configure this.</p>
+              <p style={{fontSize: 12, color: '#856404', marginBottom: 10}}>Payments processed by platform. Platform settles to your account.</p>
+              <p style={{fontSize: 11, color: '#666', marginBottom: 0}}>Available soon.</p>
             </div>
           )}
           

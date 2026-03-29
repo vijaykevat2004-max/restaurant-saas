@@ -4,8 +4,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import CF from 'cashfree-pg'
 
-const CASHFREE_ENV = process.env.CASHFREE_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX'
-
 export async function POST(req: NextRequest) {
   try {
     const { orderId, restaurantSlug } = await req.json()
@@ -13,20 +11,6 @@ export async function POST(req: NextRequest) {
     if (!orderId) {
       return NextResponse.json({ error: 'Order ID required' }, { status: 400 })
     }
-
-    const appId = process.env.CASHFREE_APP_ID
-    const secretKey = process.env.CASHFREE_SECRET_KEY
-
-    if (!appId || !secretKey) {
-      return NextResponse.json({ 
-        error: 'Payment gateway not configured',
-        message: 'Payment gateway is being set up. Please try again later.'
-      }, { status: 503 })
-    }
-
-    CF.Config.XClientId = appId
-    CF.Config.XClientSecret = secretKey
-    CF.Config.XEnvironment = CF.Environment[CASHFREE_ENV]
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -41,6 +25,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order already paid' }, { status: 400 })
     }
 
+    let appId: string
+    let secretKey: string
+    let isRestaurantOwn: boolean = false
+
+    if (order.restaurant.cashfreeAppId && order.restaurant.cashfreeSecret) {
+      appId = order.restaurant.cashfreeAppId
+      secretKey = order.restaurant.cashfreeSecret
+      isRestaurantOwn = true
+      CF.Config.XEnvironment = CF.Environment.SANDBOX
+    } else {
+      appId = process.env.CASHFREE_APP_ID!
+      secretKey = process.env.CASHFREE_SECRET_KEY!
+      CF.Config.XEnvironment = process.env.CASHFREE_ENV === 'production' 
+        ? CF.Environment.PRODUCTION 
+        : CF.Environment.SANDBOX
+    }
+
+    if (!appId || !secretKey) {
+      return NextResponse.json({ 
+        error: 'Payment gateway not configured',
+        message: 'Payment gateway is being set up. Please try again later.'
+      }, { status: 503 })
+    }
+
+    CF.Config.XClientId = appId
+    CF.Config.XClientSecret = secretKey
+
     const cfOrderId = `ORD_${order.orderNumber}_${Date.now()}`
     const customerId = `cust_${order.id.slice(-10)}`
 
@@ -48,6 +59,10 @@ export async function POST(req: NextRequest) {
       where: { id: orderId },
       data: { razorpayOrderId: cfOrderId }
     })
+
+    const webhookUrl = isRestaurantOwn
+      ? `https://restaurant-saas-vijay19.vercel.app/api/payment/webhook?restaurantId=${order.restaurantId}`
+      : `https://restaurant-saas-vijay19.vercel.app/api/payment/webhook`
 
     const request = {
       order_id: cfOrderId,
@@ -61,11 +76,11 @@ export async function POST(req: NextRequest) {
       },
       order_meta: {
         return_url: `https://restaurant-saas-vijay19.vercel.app/${order.restaurant.slug}/pay/${orderId}?success=1`,
-        notify_url: `https://restaurant-saas-vijay19.vercel.app/api/payment/webhook`
+        notify_url: webhookUrl
       }
     }
 
-    console.log('Creating Cashfree order:', { cfOrderId, amount: order.total, request })
+    console.log('Creating Cashfree order:', { cfOrderId, amount: order.total, isRestaurantOwn })
 
     const response = await CF.PGCreateOrder(request)
     const data = response.data
@@ -77,7 +92,8 @@ export async function POST(req: NextRequest) {
         cfOrderId: data.cf_order_id || cfOrderId,
         paymentSessionId: data.payment_session_id,
         publishableKey: appId,
-        amount: order.total
+        amount: order.total,
+        isRestaurantOwn
       })
     }
 

@@ -16,12 +16,15 @@ export async function GET(req: NextRequest) {
     
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { upiId: true, paymentMode: true }
+      select: { upiId: true, paymentMode: true, cashfreeAppId: true, cashfreeSecret: true, cashfreeWebhookSecret: true }
     })
     
     return NextResponse.json({ 
       upiId: restaurant?.upiId || null,
-      paymentMode: restaurant?.paymentMode || 'own_upi'
+      paymentMode: restaurant?.paymentMode || 'own_upi',
+      cashfreeAppId: restaurant?.cashfreeAppId || null,
+      cashfreeSecret: restaurant?.cashfreeSecret || null,
+      cashfreeWebhookSecret: restaurant?.cashfreeWebhookSecret || null
     })
   } catch (error) {
     console.error('Failed to fetch UPI:', error)
@@ -40,18 +43,24 @@ export async function POST(req: NextRequest) {
     }
     
     const body = await req.json()
-    const { upiId, paymentMode } = body
+    const { upiId, paymentMode, cashfreeAppId, cashfreeSecret, cashfreeWebhookSecret } = body
 
     if (paymentMode === 'own_upi' && !upiId) {
       return NextResponse.json({ error: 'UPI ID required for own UPI mode' }, { status: 400 })
     }
 
+    const updateData: any = { 
+      upiId: upiId || null,
+      paymentMode: paymentMode || 'own_upi'
+    }
+
+    if (cashfreeAppId) updateData.cashfreeAppId = cashfreeAppId
+    if (cashfreeSecret && !cashfreeSecret.startsWith('••')) updateData.cashfreeSecret = cashfreeSecret
+    if (cashfreeWebhookSecret) updateData.cashfreeWebhookSecret = cashfreeWebhookSecret
+
     await prisma.restaurant.update({
       where: { id: restaurantId },
-      data: { 
-        upiId: upiId || null,
-        paymentMode: paymentMode || 'own_upi'
-      }
+      data: updateData
     })
 
     return NextResponse.json({ success: true, upiId, paymentMode })

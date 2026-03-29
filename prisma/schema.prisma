@@ -20,25 +20,28 @@ model User {
 }
 
 model Restaurant {
-  id           String     @id @default(cuid())
-  name         String
-  slug         String     @unique
-  description  String?
-  logo         String?
-  address      String?
-  phone           String?
-  email           String?
-  openingHours    String?
-  upiId           String?
-  paymentMode     String     @default("own_upi")
-  whatsappNumber  String?
-  isActive     Boolean    @default(true)
-  categories   Category[]
-  orders       Order[]
-  staff        User[]
-  tables       Table[]
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  id               String     @id @default(cuid())
+  name             String
+  slug             String     @unique
+  description      String?
+  logo             String?
+  address          String?
+  phone            String?
+  email            String?
+  openingHours     String?
+  upiId            String?
+  paymentMode      String     @default("own_upi")
+  cashfreeAppId    String?
+  cashfreeSecret   String?
+  cashfreeWebhookSecret String?
+  whatsappNumber   String?
+  isActive         Boolean    @default(true)
+  categories       Category[]
+  orders           Order[]
+  staff            User[]
+  tables           Table[]
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 }
 
 model Table {

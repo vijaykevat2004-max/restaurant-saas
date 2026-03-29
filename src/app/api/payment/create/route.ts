@@ -2,10 +2,9 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import CF from 'cashfree-pg'
 
-const CASHFREE_BASE_URL = process.env.CASHFREE_ENV === 'production' 
-  ? 'https://api.cashfree.com/pg'
-  : 'https://sandbox.cashfree.com/pg'
+const CASHFREE_ENV = process.env.CASHFREE_ENV === 'production' ? 'PRODUCTION' : 'SANDBOX'
 
 export async function POST(req: NextRequest) {
   try {
@@ -14,6 +13,20 @@ export async function POST(req: NextRequest) {
     if (!orderId) {
       return NextResponse.json({ error: 'Order ID required' }, { status: 400 })
     }
+
+    const appId = process.env.CASHFREE_APP_ID
+    const secretKey = process.env.CASHFREE_SECRET_KEY
+
+    if (!appId || !secretKey) {
+      return NextResponse.json({ 
+        error: 'Payment gateway not configured',
+        message: 'Payment gateway is being set up. Please try again later.'
+      }, { status: 503 })
+    }
+
+    CF.Config.XClientId = appId
+    CF.Config.XClientSecret = secretKey
+    CF.Config.XEnvironment = CF.Environment[CASHFREE_ENV]
 
     const order = await prisma.order.findUnique({
       where: { id: orderId },
@@ -28,16 +41,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Order already paid' }, { status: 400 })
     }
 
-    const appId = process.env.CASHFREE_APP_ID
-    const secretKey = process.env.CASHFREE_SECRET_KEY
-
-    if (!appId || !secretKey) {
-      return NextResponse.json({ 
-        error: 'Payment gateway not configured',
-        message: 'Payment gateway is being set up. Please try again later.'
-      }, { status: 503 })
-    }
-
     const cfOrderId = `ORD_${order.orderNumber}_${Date.now()}`
     const customerId = `cust_${order.id.slice(-10)}`
 
@@ -46,7 +49,7 @@ export async function POST(req: NextRequest) {
       data: { razorpayOrderId: cfOrderId }
     })
 
-    const payload = {
+    const request = {
       order_id: cfOrderId,
       order_amount: order.total,
       order_currency: 'INR',
@@ -62,29 +65,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    console.log('Creating Cashfree order:', { cfOrderId, amount: order.total })
+    console.log('Creating Cashfree order:', { cfOrderId, amount: order.total, request })
 
-    const response = await fetch(`${CASHFREE_BASE_URL}/orders`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-client-id': appId,
-        'x-client-secret': secretKey,
-        'x-api-version': '2025-01-01'
-      },
-      body: JSON.stringify(payload)
-    })
+    const response = await CF.PGCreateOrder(request)
+    const data = response.data
 
-    const data = await response.json()
-    console.log('Cashfree API response status:', response.status)
     console.log('Cashfree API response:', JSON.stringify(data))
-
-    if (!response.ok) {
-      return NextResponse.json({ 
-        error: 'Cashfree API error',
-        message: data.message || data.error || `API error: ${response.status}`
-      }, { status: 500 })
-    }
 
     if (data.cf_order_id || data.payment_session_id) {
       return NextResponse.json({
@@ -99,11 +85,12 @@ export async function POST(req: NextRequest) {
       error: 'Failed to create payment',
       message: data.message || 'Unexpected response from Cashfree'
     }, { status: 500 })
-  } catch (error) {
-    console.error('Payment create error:', error)
+  } catch (error: any) {
+    console.error('Cashfree SDK error:', error)
+    const message = error?.response?.data?.message || error?.message || 'Payment service error'
     return NextResponse.json({ 
-      error: 'Payment service error',
-      message: 'Please try again later'
+      error: 'Cashfree API error',
+      message: message
     }, { status: 500 })
   }
 }

@@ -31,9 +31,6 @@ model Restaurant {
   openingHours     String?
   upiId            String?
   paymentMode      String     @default("own_upi")
-  cashfreeAppId    String?
-  cashfreeSecret   String?
-  cashfreeWebhookSecret String?
   whatsappNumber   String?
   isActive         Boolean    @default(true)
   categories       Category[]

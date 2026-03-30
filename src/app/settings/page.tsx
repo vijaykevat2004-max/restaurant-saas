@@ -289,37 +289,62 @@ export default function SettingsPage() {
           <div style={{marginBottom: 16}}>
             <label style={{display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#333', fontSize: 14}}>Payment Method</label>
             
-            <div style={{display: 'flex', gap: 12, marginBottom: 12}}>
+            <div style={{display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12}}>
+              <div 
+                onClick={() => setPaymentMode('upi_qr')}
+                style={{
+                  flex: '1 1 140px', padding: 14, borderRadius: 10, border: paymentMode === 'upi_qr' ? '2px solid #22c55e' : '2px solid #e0e0e0',
+                  background: paymentMode === 'upi_qr' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
+                }}
+              >
+                <div style={{fontSize: 24, marginBottom: 4}}>📱</div>
+                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'upi_qr' ? '#22c55e' : '#333'}}>UPI QR Code</div>
+                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Scan & Pay</div>
+              </div>
+              
               <div 
                 onClick={() => setPaymentMode('own_cashfree')}
                 style={{
-                  flex: 1, padding: 14, borderRadius: 10, border: paymentMode === 'own_cashfree' ? '2px solid #22c55e' : '2px solid #e0e0e0',
+                  flex: '1 1 140px', padding: 14, borderRadius: 10, border: paymentMode === 'own_cashfree' ? '2px solid #22c55e' : '2px solid #e0e0e0',
                   background: paymentMode === 'own_cashfree' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
                 }}
               >
                 <div style={{fontSize: 24, marginBottom: 4}}>💰</div>
                 <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'own_cashfree' ? '#22c55e' : '#333'}}>My Cashfree</div>
-                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Your own account</div>
+                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Your account</div>
               </div>
               
               <div 
                 onClick={() => setPaymentMode('platform')}
                 style={{
-                  flex: 1, padding: 14, borderRadius: 10, border: paymentMode === 'platform' ? '2px solid #22c55e' : '2px solid #e0e0e0',
+                  flex: '1 1 140px', padding: 14, borderRadius: 10, border: paymentMode === 'platform' ? '2px solid #22c55e' : '2px solid #e0e0e0',
                   background: paymentMode === 'platform' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
                 }}
               >
                 <div style={{fontSize: 24, marginBottom: 4}}>🏦</div>
-                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'platform' ? '#22c55e' : '#333'}}>Platform Pay</div>
-                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Auto settlement</div>
+                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'platform' ? '#22c55e' : '#333'}}>Platform</div>
+                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Auto settle</div>
               </div>
             </div>
           </div>
           
+          {paymentMode === 'upi_qr' && (
+            <div style={{background: '#e3f2fd', borderRadius: 10, padding: 16}}>
+              <p style={{fontWeight: 'bold', color: '#1565c0', marginBottom: 10, fontSize: 14}}>📱 UPI QR Code Payment (Recommended)</p>
+              <p style={{fontSize: 12, color: '#1565c0', marginBottom: 12}}>Customers scan QR code and pay directly to your UPI. Works with any UPI app (GPay, PhonePe, Paytm).</p>
+              
+              <div style={{marginBottom: 12}}>
+                <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#1565c0', fontSize: 13}}>Your UPI ID</label>
+                <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #1976d2', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="yourname@ybl or yourname@oksbi" />
+              </div>
+              <p style={{fontSize: 11, color: '#666', marginBottom: 0}}>Examples: ram@ybl, payable@yesbank, 9876543210@upi</p>
+            </div>
+          )}
+
           {paymentMode === 'own_cashfree' && (
             <div style={{background: '#e8f5e9', borderRadius: 10, padding: 16}}>
-              <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>📱 Your Own Cashfree Account</p>
-              <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 12}}>Get paid directly to your Cashfree account. Money transfers to your UPI/bank.</p>
+              <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>💰 Your Own Cashfree Account</p>
+              <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 12}}>Get paid directly to your Cashfree account.</p>
               
               <div style={{marginBottom: 12}}>
                 <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Cashfree App ID</label>

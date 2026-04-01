@@ -1,8 +1,8 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 
-export default function PaymentPage() {
+function PaymentContent() {
   const params = useParams()
   const searchParams = useSearchParams()
   const restaurantSlug = params.restaurantSlug as string
@@ -13,6 +13,9 @@ export default function PaymentPage() {
   const [order, setOrder] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [upiQrUrl, setUpiQrUrl] = useState<string>('')
+  const [checking, setChecking] = useState(false)
+
+  const isReturning = searchParams.get('status') === 'success' || searchParams.get('txnId')
 
   useEffect(() => {
     if (restaurantSlug && orderId) {
@@ -22,11 +25,18 @@ export default function PaymentPage() {
 
   useEffect(() => {
     if (restaurant?.upiId && order?.total) {
-      const upiString = `${restaurant.upiId}?am=${order.total}&cu=INR&tn=Order${order.orderNumber}`
+      const upiString = `${restaurant.upiId}?am=${order.total}&cu=INR&tn=Order${order.orderNumber}&tr=${orderId}&mode=04&purpose=00`
       const encodedUpi = encodeURIComponent(upiString)
-      setUpiQrUrl(`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://${encodedUpi}`)
+      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://${encodedUpi}`
+      setUpiQrUrl(qrUrl)
     }
   }, [restaurant, order])
+
+  useEffect(() => {
+    if (isReturning && order) {
+      checkPayment()
+    }
+  }, [isReturning, order])
 
   const loadData = async () => {
     try {
@@ -43,6 +53,30 @@ export default function PaymentPage() {
       setError('Failed to load payment data')
     }
     setLoading(false)
+  }
+
+  const checkPayment = async () => {
+    setChecking(true)
+    try {
+      const verifyRes = await fetch('/api/payment/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          orderId: orderId, 
+          paymentId: searchParams.get('txnId') || `upi_${Date.now()}`
+        })
+      })
+      
+      if (verifyRes.ok) {
+        const data = await verifyRes.json()
+        if (data.success) {
+          setOrder((prev: any) => ({ ...prev, paymentStatus: 'PAID' }))
+        }
+      }
+    } catch (e) {
+      console.error('Payment check error:', e)
+    }
+    setChecking(false)
   }
 
   if (loading) {
@@ -99,6 +133,25 @@ export default function PaymentPage() {
     )
   }
 
+  const handlePay = async () => {
+    if (!restaurant.upiId) {
+      alert('UPI ID not configured by restaurant')
+      return
+    }
+    
+    const returnUrl = `${window.location.origin}/${restaurantSlug}/pay/${orderId}?status=success`
+    const upiLink = `upi://pay?pa=${restaurant.upiId}&am=${order.total}&cu=INR&tn=Order${order.orderNumber}&tr=${orderId}&returl=${encodeURIComponent(returnUrl)}`
+    
+    window.location.href = upiLink
+  }
+
+  const handleVerifyManually = async () => {
+    const confirmPay = confirm('Have you completed the UPI payment?')
+    if (confirmPay) {
+      await checkPayment()
+    }
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: '#fafafa', fontFamily: 'system-ui' }}>
       <div style={{ textAlign: 'center', padding: 24, background: 'white', borderBottom: '1px solid #eee' }}>
@@ -111,6 +164,9 @@ export default function PaymentPage() {
         )}
         <h1 style={{ fontSize: 22, fontWeight: 'bold', margin: '16px 0 4px' }}>{restaurant.name}</h1>
         <p style={{ color: '#666', fontSize: 14 }}>Order #{order.orderNumber}</p>
+        {isReturning && checking && (
+          <p style={{ color: '#1976d2', fontSize: 14, marginTop: 8 }}>🔄 Verifying payment...</p>
+        )}
       </div>
 
       <div style={{ textAlign: 'center', padding: 32, background: 'white', margin: 16, borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
@@ -120,31 +176,41 @@ export default function PaymentPage() {
 
       <div style={{ padding: '0 16px' }}>
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: '#333' }}>📱 Scan QR Code to Pay</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: '#333' }}>📱 Pay via UPI</h3>
           <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
-            Open any UPI app (GPay, PhonePe, Paytm) and scan
+            Tap below to pay with any UPI app (GPay, PhonePe, Paytm)
           </p>
           
-          <div style={{ 
-            background: 'white', 
-            padding: 16, 
-            borderRadius: 12, 
-            display: 'inline-block',
-            border: '2px solid #e0e0e0',
-            marginBottom: 16
-          }}>
-            {upiQrUrl ? (
-              <img 
-                src={upiQrUrl} 
-                alt="UPI QR Code" 
-                style={{ width: 220, height: 220 }}
-              />
-            ) : (
-              <div style={{ width: 220, height: 220, background: '#f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <p style={{ color: '#999' }}>Loading QR...</p>
+          <button 
+            onClick={handlePay}
+            style={{ 
+              width: '100%', padding: 18, background: '#1976d2', 
+              color: 'white', borderRadius: 12, fontSize: 18, fontWeight: 'bold', 
+              border: 'none', cursor: 'pointer', marginBottom: 16
+            }}
+          >
+            📲 Pay with UPI App
+          </button>
+          
+          {upiQrUrl && (
+            <>
+              <div style={{ margin: '16px 0', color: '#666', fontSize: 13 }}>or scan QR code</div>
+              <div style={{ 
+                background: 'white', 
+                padding: 16, 
+                borderRadius: 12, 
+                display: 'inline-block',
+                border: '2px solid #e0e0e0',
+                marginBottom: 16
+              }}>
+                <img 
+                  src={upiQrUrl} 
+                  alt="UPI QR Code" 
+                  style={{ width: 180, height: 180 }}
+                />
               </div>
-            )}
-          </div>
+            </>
+          )}
           
           <div style={{ background: '#e3f2fd', borderRadius: 10, padding: 12, marginBottom: 16 }}>
             <p style={{ fontSize: 14, fontWeight: 'bold', color: '#1565c0', marginBottom: 4 }}>Pay to UPI ID:</p>
@@ -152,21 +218,18 @@ export default function PaymentPage() {
           </div>
           
           <button 
-            onClick={() => {
-              const upiLink = `upi://pay?pa=${restaurant.upiId}&am=${order.total}&cu=INR&tn=Order${order.orderNumber}`
-              window.location.href = upiLink
-            }}
+            onClick={handleVerifyManually}
             style={{ 
-              width: '100%', padding: 18, background: '#1976d2', 
-              color: 'white', borderRadius: 12, fontSize: 18, fontWeight: 'bold', 
-              border: 'none', cursor: 'pointer', marginBottom: 12
+              width: '100%', padding: 14, background: '#25D366', 
+              color: 'white', borderRadius: 12, fontSize: 16, fontWeight: 'bold', 
+              border: 'none', cursor: 'pointer'
             }}
           >
-            📲 Open UPI App
+            ✓ I've Paid - Verify Payment
           </button>
           
-          <p style={{ fontSize: 12, color: '#666', marginTop: 12 }}>
-            After paying, show the payment confirmation to the restaurant staff
+          <p style={{ fontSize: 12, color: '#666', marginTop: 16 }}>
+            After payment, click "I've Paid" or return to this page
           </p>
         </div>
       </div>
@@ -179,5 +242,13 @@ export default function PaymentPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>}>
+      <PaymentContent />
+    </Suspense>
   )
 }

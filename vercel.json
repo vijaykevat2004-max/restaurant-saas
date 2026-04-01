@@ -1,5 +1,6 @@
 {
   "routes": [
     { "src": "/api/(.*)", "headers": { "x-vercel-protection-bypass": "true" } }
-  ]
+  ],
+  "buildCommand": "npx prisma generate && npx prisma db push && next build"
 }

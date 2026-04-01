@@ -77,9 +77,7 @@ export async function PATCH(req: NextRequest) {
         openingHours: body.openingHours,
         logo: body.logo || null,
         upiId: body.upiId || null,
-        paymentMode: body.paymentMode || 'own_link',
-        paymentLink: body.paymentLink || null,
-        paymentInstructions: body.paymentInstructions || null
+        paymentMode: body.paymentMode || 'own_upi'
       }
     })
 

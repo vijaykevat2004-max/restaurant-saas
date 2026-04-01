@@ -33,8 +33,8 @@ export async function GET(req: NextRequest) {
       restaurant: {
         name: restaurant.name,
         logo: restaurant.logo,
-        paymentLink: restaurant.paymentLink,
-        paymentInstructions: restaurant.paymentInstructions,
+        upiId: restaurant.upiId,
+        paymentMode: restaurant.paymentMode,
         phone: restaurant.phone,
       },
       order: {

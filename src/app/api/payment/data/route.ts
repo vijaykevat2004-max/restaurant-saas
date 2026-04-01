@@ -33,9 +33,9 @@ export async function GET(req: NextRequest) {
       restaurant: {
         name: restaurant.name,
         logo: restaurant.logo,
-        upiId: restaurant.upiId,
+        paymentLink: restaurant.paymentLink,
+        paymentInstructions: restaurant.paymentInstructions,
         phone: restaurant.phone,
-        paymentMode: restaurant.paymentMode || 'own_upi',
       },
       order: {
         id: order.id,

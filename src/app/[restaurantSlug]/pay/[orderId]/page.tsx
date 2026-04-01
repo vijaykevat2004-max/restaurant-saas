@@ -12,31 +12,14 @@ function PaymentContent() {
   const [restaurant, setRestaurant] = useState<any>(null)
   const [order, setOrder] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
-  const [upiQrUrl, setUpiQrUrl] = useState<string>('')
-  const [checking, setChecking] = useState(false)
-
-  const isReturning = searchParams.get('status') === 'success' || searchParams.get('txnId')
+  const [verifying, setVerifying] = useState(false)
+  const [verified, setVerified] = useState(false)
 
   useEffect(() => {
     if (restaurantSlug && orderId) {
       loadData()
     }
   }, [orderId])
-
-  useEffect(() => {
-    if (restaurant?.upiId && order?.total) {
-      const upiString = `${restaurant.upiId}?am=${order.total}&cu=INR&tn=Order${order.orderNumber}&tr=${orderId}&mode=04&purpose=00`
-      const encodedUpi = encodeURIComponent(upiString)
-      const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=upi://${encodedUpi}`
-      setUpiQrUrl(qrUrl)
-    }
-  }, [restaurant, order])
-
-  useEffect(() => {
-    if (isReturning && order) {
-      checkPayment()
-    }
-  }, [isReturning, order])
 
   const loadData = async () => {
     try {
@@ -55,28 +38,41 @@ function PaymentContent() {
     setLoading(false)
   }
 
-  const checkPayment = async () => {
-    setChecking(true)
+  const handlePay = () => {
+    if (!restaurant.paymentLink) {
+      alert('Restaurant has not set up payment link yet')
+      return
+    }
+    
+    window.open(restaurant.paymentLink, '_blank')
+  }
+
+  const handleVerifyPayment = async () => {
+    if (verified) return
+    
+    setVerifying(true)
     try {
-      const verifyRes = await fetch('/api/payment/verify', {
+      const res = await fetch('/api/payment/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
-          orderId: orderId, 
-          paymentId: searchParams.get('txnId') || `upi_${Date.now()}`
+          orderId: orderId,
+          paymentNote: 'Customer confirmed payment via own link'
         })
       })
       
-      if (verifyRes.ok) {
-        const data = await verifyRes.json()
+      if (res.ok) {
+        const data = await res.json()
         if (data.success) {
+          setVerified(true)
           setOrder((prev: any) => ({ ...prev, paymentStatus: 'PAID' }))
         }
       }
     } catch (e) {
-      console.error('Payment check error:', e)
+      console.error('Verification error:', e)
+      alert('Failed to verify payment')
     }
-    setChecking(false)
+    setVerifying(false)
   }
 
   if (loading) {
@@ -114,14 +110,14 @@ function PaymentContent() {
     )
   }
 
-  if (order.paymentStatus === 'PAID') {
+  if (order.paymentStatus === 'PAID' || verified) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
         <div style={{ textAlign: 'center', padding: 40 }}>
           <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#22c55e', margin: '0 auto 24px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <span style={{ fontSize: 50, color: 'white' }}>✓</span>
           </div>
-          <h1 style={{ fontSize: 28, color: '#22c55e', marginBottom: 8 }}>Payment Successful!</h1>
+          <h1 style={{ fontSize: 28, color: '#22c55e', marginBottom: 8 }}>Payment Confirmed!</h1>
           <p style={{ fontSize: 18, color: '#333', marginBottom: 4 }}>Order #{order.orderNumber}</p>
           <p style={{ fontSize: 36, fontWeight: 'bold', color: '#d32f2f', margin: '20px 0' }}>₹{order.total}</p>
           <p style={{ color: '#666', marginTop: 16, fontSize: 16 }}>Your order is being prepared!</p>
@@ -131,25 +127,6 @@ function PaymentContent() {
         </div>
       </div>
     )
-  }
-
-  const handlePay = async () => {
-    if (!restaurant.upiId) {
-      alert('UPI ID not configured by restaurant')
-      return
-    }
-    
-    const returnUrl = `${window.location.origin}/${restaurantSlug}/pay/${orderId}?status=success`
-    const upiLink = `upi://pay?pa=${restaurant.upiId}&am=${order.total}&cu=INR&tn=Order${order.orderNumber}&tr=${orderId}&returl=${encodeURIComponent(returnUrl)}`
-    
-    window.location.href = upiLink
-  }
-
-  const handleVerifyManually = async () => {
-    const confirmPay = confirm('Have you completed the UPI payment?')
-    if (confirmPay) {
-      await checkPayment()
-    }
   }
 
   return (
@@ -164,9 +141,6 @@ function PaymentContent() {
         )}
         <h1 style={{ fontSize: 22, fontWeight: 'bold', margin: '16px 0 4px' }}>{restaurant.name}</h1>
         <p style={{ color: '#666', fontSize: 14 }}>Order #{order.orderNumber}</p>
-        {isReturning && checking && (
-          <p style={{ color: '#1976d2', fontSize: 14, marginTop: 8 }}>🔄 Verifying payment...</p>
-        )}
       </div>
 
       <div style={{ textAlign: 'center', padding: 32, background: 'white', margin: 16, borderRadius: 16, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
@@ -176,68 +150,65 @@ function PaymentContent() {
 
       <div style={{ padding: '0 16px' }}>
         <div style={{ background: 'white', borderRadius: 16, padding: 24, boxShadow: '0 2px 10px rgba(0,0,0,0.05)', textAlign: 'center' }}>
-          <h3 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: '#333' }}>📱 Pay via UPI</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 8, color: '#333' }}>💳 Pay via Restaurant</h3>
           <p style={{ fontSize: 14, color: '#666', marginBottom: 20 }}>
-            Tap below to pay with any UPI app (GPay, PhonePe, Paytm)
+            Click below to pay using restaurant's payment method
           </p>
           
-          <button 
-            onClick={handlePay}
-            style={{ 
-              width: '100%', padding: 18, background: '#1976d2', 
-              color: 'white', borderRadius: 12, fontSize: 18, fontWeight: 'bold', 
-              border: 'none', cursor: 'pointer', marginBottom: 16
-            }}
-          >
-            📲 Pay with UPI App
-          </button>
-          
-          {upiQrUrl && (
+          {restaurant.paymentLink ? (
             <>
-              <div style={{ margin: '16px 0', color: '#666', fontSize: 13 }}>or scan QR code</div>
-              <div style={{ 
-                background: 'white', 
-                padding: 16, 
-                borderRadius: 12, 
-                display: 'inline-block',
-                border: '2px solid #e0e0e0',
-                marginBottom: 16
-              }}>
-                <img 
-                  src={upiQrUrl} 
-                  alt="UPI QR Code" 
-                  style={{ width: 180, height: 180 }}
-                />
+              <button 
+                onClick={handlePay}
+                style={{ 
+                  width: '100%', padding: 18, background: '#1976d2', 
+                  color: 'white', borderRadius: 12, fontSize: 18, fontWeight: 'bold', 
+                  border: 'none', cursor: 'pointer', marginBottom: 16
+                }}
+              >
+                📲 Go to Payment
+              </button>
+              
+              {restaurant.paymentInstructions && (
+                <div style={{ background: '#fff3e0', borderRadius: 10, padding: 14, marginBottom: 16, textAlign: 'left' }}>
+                  <p style={{ fontSize: 13, fontWeight: 'bold', color: '#e65100', marginBottom: 8 }}>📋 Payment Instructions:</p>
+                  <p style={{ fontSize: 13, color: '#333', whiteSpace: 'pre-wrap' }}>{restaurant.paymentInstructions}</p>
+                </div>
+              )}
+              
+              <div style={{ background: '#e3f2fd', borderRadius: 10, padding: 12, marginBottom: 16 }}>
+                <p style={{ fontSize: 14, fontWeight: 'bold', color: '#1565c0', marginBottom: 4 }}>Payment Link:</p>
+                <p style={{ fontSize: 12, color: '#0d47a1', wordBreak: 'break-all' }}>{restaurant.paymentLink}</p>
               </div>
             </>
+          ) : (
+            <div style={{ background: '#ffebee', borderRadius: 10, padding: 16, marginBottom: 16 }}>
+              <p style={{ fontSize: 14, color: '#c62828', fontWeight: 'bold' }}>⚠️ Payment not set up</p>
+              <p style={{ fontSize: 12, color: '#c62828', marginTop: 8 }}>Restaurant has not configured payment yet. Please contact them directly.</p>
+            </div>
           )}
           
-          <div style={{ background: '#e3f2fd', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-            <p style={{ fontSize: 14, fontWeight: 'bold', color: '#1565c0', marginBottom: 4 }}>Pay to UPI ID:</p>
-            <p style={{ fontSize: 16, fontWeight: 'bold', color: '#0d47a1' }}>{restaurant.upiId}</p>
-          </div>
-          
           <button 
-            onClick={handleVerifyManually}
+            onClick={handleVerifyPayment}
+            disabled={verifying || !restaurant.paymentLink}
             style={{ 
-              width: '100%', padding: 14, background: '#25D366', 
+              width: '100%', padding: 16, background: restaurant.paymentLink ? '#25D366' : '#ccc', 
               color: 'white', borderRadius: 12, fontSize: 16, fontWeight: 'bold', 
-              border: 'none', cursor: 'pointer'
+              border: 'none', cursor: restaurant.paymentLink ? 'pointer' : 'not-allowed'
             }}
           >
-            ✓ I've Paid - Verify Payment
+            {verifying ? '⏳ Verifying...' : '✓ I Have Paid'}
           </button>
           
           <p style={{ fontSize: 12, color: '#666', marginTop: 16 }}>
-            After payment, click "I've Paid" or return to this page
+            After payment, click "I Have Paid" to confirm your order
           </p>
         </div>
       </div>
 
       <div style={{ padding: '0 16px 32px' }}>
-        <div style={{ background: '#e3f2fd', borderRadius: 12, padding: 16, marginTop: 16, textAlign: 'center' }}>
-          <p style={{ fontSize: 12, color: '#1565c0' }}>
-            🔒 Payment goes directly to restaurant's UPI account
+        <div style={{ background: '#e8f5e9', borderRadius: 12, padding: 16, marginTop: 16, textAlign: 'center' }}>
+          <p style={{ fontSize: 12, color: '#2e7d32' }}>
+            🔒 Payment goes directly to restaurant
           </p>
         </div>
       </div>

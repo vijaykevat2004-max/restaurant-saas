@@ -18,13 +18,11 @@ export default function SettingsPage() {
     address: '',
     email: '',
     openingHours: '',
-    logo: '',
-    whatsappNumber: ''
+    logo: ''
   })
   
-  const [upiId, setUpiId] = useState('')
-  const [paymentMode, setPaymentMode] = useState('own_upi')
-  const [whatsappNumber, setWhatsappNumber] = useState('')
+  const [paymentLink, setPaymentLink] = useState('')
+  const [paymentInstructions, setPaymentInstructions] = useState('')
 
 
   useEffect(() => {
@@ -44,18 +42,12 @@ export default function SettingsPage() {
           address: menuData.restaurant.address || '',
           email: menuData.restaurant.email || '',
           openingHours: menuData.restaurant.openingHours || '',
-          logo: menuData.restaurant.logo || '',
-          whatsappNumber: menuData.restaurant.whatsappNumber || ''
+          logo: menuData.restaurant.logo || ''
         })
         setLogoPreview(menuData.restaurant.logo || null)
+        setPaymentLink(menuData.restaurant.paymentLink || '')
+        setPaymentInstructions(menuData.restaurant.paymentInstructions || '')
       }
-      
-      const upiRes = await fetch('/api/upi')
-      const upiData = await upiRes.json()
-        setUpiId(upiData.upiId || '')
-        setPaymentMode(upiData.paymentMode || 'own_upi')
-        setWhatsappNumber(menuData.restaurant.whatsappNumber || '')
-
     } catch (e) {
       console.error(e)
     }
@@ -128,17 +120,17 @@ export default function SettingsPage() {
     setTimeout(() => { setMessage('') }, 3000)
   }
 
-  const handleSaveUPI = async () => {
+  const handleSavePayment = async () => {
     setSaving(true)
     setMessage('')
     
     try {
-      const res = await fetch('/api/upi', {
-        method: 'POST',
+      const res = await fetch('/api/restaurant', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          upiId, 
-          paymentMode
+        body: JSON.stringify({
+          paymentLink,
+          paymentInstructions
         })
       })
       
@@ -166,12 +158,12 @@ export default function SettingsPage() {
   }
 
   const getMessageBg = () => {
-    if (message.includes('success') || message.includes('UPI') || message.includes('Logo') || message.includes('uploaded')) return '#dcfce7'
+    if (message.includes('success') || message.includes('Payment') || message.includes('Logo') || message.includes('uploaded')) return '#dcfce7'
     return '#fef2f2'
   }
 
   const getMessageColor = () => {
-    if (message.includes('success') || message.includes('UPI') || message.includes('Logo') || message.includes('uploaded')) return '#166534'
+    if (message.includes('success') || message.includes('Payment') || message.includes('Logo') || message.includes('uploaded')) return '#166534'
     return '#dc2626'
   }
 
@@ -253,14 +245,9 @@ export default function SettingsPage() {
               <input value={form.phone} onChange={(e) => setForm({...form, phone: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="+91 98765 43210" />
             </div>
             <div style={{marginBottom: 14}}>
-              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#555', fontSize: 13}}>WhatsApp</label>
-              <input value={form.whatsappNumber} onChange={(e) => setForm({...form, whatsappNumber: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="919876543210" />
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#555', fontSize: 13}}>Email</label>
+              <input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="contact@restaurant.com" />
             </div>
-          </div>
-          
-          <div style={{marginBottom: 14}}>
-            <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#555', fontSize: 13}}>Email</label>
-            <input value={form.email} onChange={(e) => setForm({...form, email: e.target.value})} style={{width: '100%', padding: 12, border: '1px solid #e0e0e0', borderRadius: 10, fontSize: 15, boxSizing: 'border-box'}} placeholder="contact@restaurant.com" />
           </div>
           
           <div style={{marginBottom: 14}}>
@@ -280,44 +267,34 @@ export default function SettingsPage() {
 
         <div style={{background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
           <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 4}}>💳 Payment Settings</h2>
-          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Receive payments directly to your account</p>
+          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Tell customers how to pay you</p>
           
-          <div style={{marginBottom: 16}}>
-            <label style={{display: 'block', marginBottom: 8, fontWeight: 'bold', color: '#333', fontSize: 14}}>Payment Method</label>
+          <div style={{background: '#e8f5e9', borderRadius: 10, padding: 16, marginBottom: 16}}>
+            <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>🏦 Your Own Payment Method</p>
+            <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 12}}>Add your payment link (UPI, bank transfer, payment page, WhatsApp, etc.)</p>
             
-            <div style={{display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12}}>
-              <div 
-                onClick={() => setPaymentMode('upi_qr')}
-                style={{
-                  flex: '1 1 140px', padding: 14, borderRadius: 10, border: paymentMode === 'upi_qr' ? '2px solid #22c55e' : '2px solid #e0e0e0',
-                  background: paymentMode === 'upi_qr' ? '#f0fdf4' : 'white', cursor: 'pointer', textAlign: 'center'
-                }}
-              >
-                <div style={{fontSize: 24, marginBottom: 4}}>📱</div>
-                <div style={{fontWeight: 'bold', fontSize: 13, color: paymentMode === 'upi_qr' ? '#22c55e' : '#333'}}>UPI QR Code</div>
-                <div style={{fontSize: 11, color: '#888', marginTop: 2}}>Scan & Pay</div>
-              </div>
-              
-
+            <div style={{marginBottom: 12}}>
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Payment Link / UPI ID / PhonePe / GPay</label>
+              <input value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="https://upipay.io/abc or yourname@ybl or https://wa.me/..." />
+            </div>
+            
+            <div style={{marginBottom: 12}}>
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Payment Instructions (for customers)</label>
+              <textarea value={paymentInstructions} onChange={(e) => setPaymentInstructions(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box', minHeight: 80}} placeholder="e.g., Pay via UPI to 9876543210@upi or click the link above" />
+            </div>
+            
+            <div style={{background: '#c8e6c9', borderRadius: 8, padding: 12}}>
+              <p style={{fontSize: 11, color: '#2e7d32', marginBottom: 6}}><strong>Examples:</strong></p>
+              <ul style={{fontSize: 11, color: '#2e7d32', margin: 0, paddingLeft: 16, lineHeight: 1.6}}>
+                <li>UPI: <code>yourname@ybl</code></li>
+                <li>PhonePe: <code>https://phonepe.com/pay/yourname</code></li>
+                <li>WhatsApp: <code>https://wa.me/919876543210?text=...</code></li>
+                <li>Payment Page: <code>https://razorpay.com/pay/yourid</code></li>
+              </ul>
             </div>
           </div>
           
-          {paymentMode === 'upi_qr' && (
-            <div style={{background: '#e3f2fd', borderRadius: 10, padding: 16}}>
-              <p style={{fontWeight: 'bold', color: '#1565c0', marginBottom: 10, fontSize: 14}}>📱 UPI QR Code Payment (Recommended)</p>
-              <p style={{fontSize: 12, color: '#1565c0', marginBottom: 12}}>Customers scan QR code and pay directly to your UPI. Works with any UPI app (GPay, PhonePe, Paytm).</p>
-              
-              <div style={{marginBottom: 12}}>
-                <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#1565c0', fontSize: 13}}>Your UPI ID</label>
-                <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #1976d2', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="yourname@ybl or yourname@oksbi" />
-              </div>
-              <p style={{fontSize: 11, color: '#666', marginBottom: 0}}>Examples: ram@ybl, payable@yesbank, 9876543210@upi</p>
-            </div>
-          )}
-
-
-          
-          <button onClick={handleSaveUPI} disabled={saving} style={{background: '#22c55e', color: 'white', padding: '12px 24px', borderRadius: 10, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 14, marginTop: 16}}>
+          <button onClick={handleSavePayment} disabled={saving} style={{background: '#22c55e', color: 'white', padding: '12px 24px', borderRadius: 10, border: 'none', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 'bold', fontSize: 14}}>
             {saving ? 'Saving...' : '💾 Save Payment Settings'}
           </button>
         </div>
@@ -328,7 +305,7 @@ export default function SettingsPage() {
           <div style={{background: '#fff', borderRadius: 10, padding: 14, marginBottom: 12}}>
             <p style={{fontSize: 12, color: '#888', marginBottom: 4}}>Share this URL with customers:</p>
             <code style={{fontSize: 14, fontWeight: 'bold', color: '#ff6b35', wordBreak: 'break-all'}}>
-              {window.location.origin}/{restaurant?.slug || 'your-store'}
+              {typeof window !== 'undefined' ? window.location.origin : ''}/{restaurant?.slug || 'your-store'}
             </code>
           </div>
         </div>

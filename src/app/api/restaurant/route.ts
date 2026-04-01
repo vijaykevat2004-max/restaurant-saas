@@ -76,8 +76,8 @@ export async function PATCH(req: NextRequest) {
         email: body.email,
         openingHours: body.openingHours,
         logo: body.logo || null,
-        upiId: body.upiId,
-        paymentMode: body.paymentMode || 'own_upi'
+        paymentLink: body.paymentLink || null,
+        paymentInstructions: body.paymentInstructions || null
       }
     })
 

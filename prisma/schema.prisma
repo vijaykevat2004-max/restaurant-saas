@@ -29,9 +29,8 @@ model Restaurant {
   phone            String?
   email            String?
   openingHours     String?
-  upiId            String?
-  paymentMode      String     @default("own_upi")
-  whatsappNumber   String?
+  paymentLink     String?
+  paymentInstructions String?
   isActive         Boolean    @default(true)
   categories       Category[]
   orders           Order[]
@@ -97,8 +96,7 @@ model Order {
   notes           String?
   paymentMethod   String?     @default("ONLINE")
   paymentStatus   String      @default("PENDING")
-  paymentId       String?
-  razorpayOrderId String?
+  paymentNote     String?
   cashReceived   Float?
   cashChange     Float?
   restaurantId    String

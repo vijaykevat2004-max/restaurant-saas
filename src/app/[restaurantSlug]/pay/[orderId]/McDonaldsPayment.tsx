@@ -1,10 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 
 interface Props {
   restaurantName: string
   restaurantLogo: string | null
-  upiId: string
+  paymentLink: string
+  paymentInstructions: string | null
   amount: number
   orderNumber: string
   orderId: string
@@ -15,8 +16,6 @@ export default function PaymentPage(props: Props) {
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
 
-  const qrUrl = `upi://pay?pa=${props.upiId}&pn=${encodeURIComponent(props.restaurantName)}&am=${props.amount}&cu=INR`
-
   const handlePaid = async () => {
     setLoading(true)
     try {
@@ -25,7 +24,6 @@ export default function PaymentPage(props: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           orderId: props.orderId,
-          paymentId: `upi_${Date.now()}`,
           verified: true 
         })
       })
@@ -44,9 +42,10 @@ export default function PaymentPage(props: Props) {
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', fontFamily: 'system-ui' }}>
         <div style={{ textAlign: 'center', padding: 40 }}>
           <div style={{ fontSize: 60, marginBottom: 16 }}>✓</div>
-          <h1 style={{ fontSize: 24, color: '#22c55e' }}>Payment Successful!</h1>
+          <h1 style={{ fontSize: 24, color: '#22c55e' }}>Payment Submitted!</h1>
           <p>Order #{props.orderNumber}</p>
           <p style={{ fontSize: 28, fontWeight: 'bold' }}>₹{props.amount}</p>
+          <p style={{ color: '#666', marginTop: 16 }}>Staff will verify your payment shortly.</p>
         </div>
       </div>
     )
@@ -67,19 +66,34 @@ export default function PaymentPage(props: Props) {
         <p style={{ fontSize: 48, fontWeight: 'bold', color: '#d32f2f', margin: 0 }}>₹{props.amount}</p>
       </div>
       
-      <div style={{ textAlign: 'center', padding: '0 20px' }}>
-        <img 
-          src={`https://api.qrserver.com/v1/create-qr-code/?size=250&data=${encodeURIComponent(qrUrl)}`}
-          alt="Pay QR"
-          style={{ width: 250, height: 250, display: 'inline-block' }}
-        />
-        <p style={{ fontSize: 12, color: '#666', marginTop: 12 }}>Scan with any UPI app</p>
+      <div style={{ padding: '0 20px 24px' }}>
+        <a 
+          href={props.paymentLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ 
+            display: 'block',
+            width: '100%', 
+            padding: 16, 
+            background: '#d32f2f', 
+            color: 'white',
+            borderRadius: 12, 
+            fontSize: 16, 
+            fontWeight: 'bold', 
+            textAlign: 'center',
+            textDecoration: 'none'
+          }}
+        >
+          Go to Payment ↗
+        </a>
       </div>
       
-      <div style={{ padding: '24px 20px' }}>
-        <p style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>Pay to</p>
-        <p style={{ fontSize: 16, fontWeight: 'bold', wordBreak: 'break-all' }}>{props.upiId}</p>
-      </div>
+      {props.paymentInstructions && (
+        <div style={{ margin: '0 20px 24px', padding: 16, background: '#f5f5f5', borderRadius: 12 }}>
+          <p style={{ fontSize: 14, fontWeight: 'bold', marginBottom: 8 }}>Payment Instructions</p>
+          <p style={{ fontSize: 14, color: '#666', whiteSpace: 'pre-wrap' }}>{props.paymentInstructions}</p>
+        </div>
+      )}
       
       <div style={{ padding: '0 20px' }}>
         <button 
@@ -91,8 +105,11 @@ export default function PaymentPage(props: Props) {
             cursor: loading ? 'not-allowed' : 'pointer'
           }}
         >
-          {loading ? 'Verifying...' : "I've Paid ✓"}
+          {loading ? 'Submitting...' : "I've Paid ✓"}
         </button>
+        <p style={{ fontSize: 12, color: '#999', textAlign: 'center', marginTop: 12 }}>
+          After completing payment, click the button above
+        </p>
       </div>
     </div>
   )

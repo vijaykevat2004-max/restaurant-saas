@@ -21,7 +21,6 @@ export default function DemoSetup({ label = 'Create Demo Restaurant' }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           restaurantName: 'Demo Restaurant',
-          upiId: 'demo@ybl',
           phone: '+919876543210'
         })
       })

@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { restaurantName, upiId, phone } = body
+    const { restaurantName, phone } = body
 
     const slug = (restaurantName || 'demo-restaurant').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
@@ -21,7 +21,6 @@ export async function POST(req: NextRequest) {
         slug,
         description: 'A sample restaurant for testing',
         phone: phone || null,
-        upiId: upiId || null,
       }
     })
 

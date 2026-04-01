@@ -15,7 +15,6 @@ interface Restaurant {
   name: string
   slug: string
   logo: string | null
-  upiId: string | null
 }
 
 interface Table {

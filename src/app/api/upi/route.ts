@@ -11,19 +11,21 @@ export async function GET(req: NextRequest) {
     const restaurantId = session?.user?.restaurantId as string | null
     
     if (!restaurantId) {
-      return NextResponse.json({ upiId: null })
+      return NextResponse.json({ paymentLink: null, paymentInstructions: null })
     }
     
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { upiId: true }
+      select: { paymentLink: true, paymentInstructions: true }
     })
     
-    const upiId = restaurant?.upiId || null
-    return NextResponse.json({ upiId })
+    return NextResponse.json({ 
+      paymentLink: restaurant?.paymentLink || null,
+      paymentInstructions: restaurant?.paymentInstructions || null
+    })
   } catch (error) {
-    console.error('Failed to fetch UPI:', error)
-    return NextResponse.json({ upiId: null })
+    console.error('Failed to fetch payment settings:', error)
+    return NextResponse.json({ paymentLink: null, paymentInstructions: null })
   }
 }
 
@@ -38,20 +40,19 @@ export async function POST(req: NextRequest) {
     }
     
     const body = await req.json()
-    const { upiId } = body
-
-    if (!upiId) {
-      return NextResponse.json({ error: 'UPI ID required' }, { status: 400 })
-    }
+    const { paymentLink, paymentInstructions } = body
 
     await prisma.restaurant.update({
       where: { id: restaurantId },
-      data: { upiId }
+      data: {
+        paymentLink: paymentLink || null,
+        paymentInstructions: paymentInstructions || null
+      }
     })
 
-    return NextResponse.json({ success: true, upiId })
+    return NextResponse.json({ success: true, paymentLink, paymentInstructions })
   } catch (error) {
-    console.error('Failed to save UPI ID:', error)
-    return NextResponse.json({ error: 'Failed to save UPI ID' }, { status: 500 })
+    console.error('Failed to save payment settings:', error)
+    return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 })
   }
 }

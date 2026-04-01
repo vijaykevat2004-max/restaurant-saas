@@ -7,7 +7,7 @@ import { sseManager } from '@/lib/sse'
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { orderId, paymentId, verified } = body
+    const { orderId, paymentNote, verified } = body
 
     if (!orderId) {
       return NextResponse.json({ error: 'Order ID required' }, { status: 400 })
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       where: { id: orderId },
       data: { 
         paymentStatus: 'PAID',
-        paymentId: paymentId || `upi_${Date.now()}`,
+        paymentNote: paymentNote || `paid_${Date.now()}`,
         status: 'PENDING'
       }
     })

@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
         name: true,
         slug: true,
         description: true,
-        upiId: true,
-        paymentMode: true,
+        paymentLink: true,
+        paymentInstructions: true,
         address: true,
         phone: true
       }

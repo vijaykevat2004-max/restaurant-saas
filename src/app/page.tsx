@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import DemoSetup from './DemoSetup'
+import AutoDemoSetup from './AutoDemoSetup'
 
 export default async function HomePage() {
   let restaurants: any[] = []
+  let needsDemo = false
+  
   try {
     restaurants = await prisma.restaurant.findMany({
       where: { isActive: true },
@@ -18,8 +20,13 @@ export default async function HomePage() {
         }
       }
     })
+    
+    if (restaurants.length === 0) {
+      needsDemo = true
+    }
   } catch (e) {
     console.error('Failed to fetch restaurants:', e)
+    needsDemo = true
   }
 
   return (
@@ -43,9 +50,9 @@ export default async function HomePage() {
         {restaurants.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60, background: 'white', borderRadius: 16 }}>
             <div style={{ fontSize: 64, marginBottom: 16 }}>🍽️</div>
-            <h3 style={{ fontSize: 24, marginBottom: 8 }}>No restaurants yet</h3>
-            <p style={{ color: '#666', marginBottom: 16 }}>Create a demo restaurant to test the system</p>
-            <DemoSetup />
+            <h3 style={{ fontSize: 24, marginBottom: 8 }}>Welcome to RestaurantHub</h3>
+            <p style={{ color: '#666', marginBottom: 16 }}>Click below to create a demo restaurant and test the system</p>
+            <AutoDemoSetup />
             <div style={{ marginTop: 16 }}>
               <Link href="/register" style={{ background: '#f97316', color: 'white', padding: '12px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 'bold' }}>
                 Or Create Your Own Restaurant
@@ -86,7 +93,9 @@ export default async function HomePage() {
             </div>
             
             <div style={{ marginTop: 32, textAlign: 'center' }}>
-              <DemoSetup label="Add Demo Restaurant" />
+              <Link href="/register" style={{ background: '#22c55e', color: 'white', padding: '12px 24px', borderRadius: 8, textDecoration: 'none', fontWeight: 'bold' }}>
+                + Add New Restaurant
+              </Link>
             </div>
           </>
         )}

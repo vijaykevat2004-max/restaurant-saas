@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       where: { id: orderId },
       data: { 
         paymentStatus: 'PAID',
-        paymentNote: paymentNote || `paid_${Date.now()}`,
+        paymentId: paymentNote || `paid_${Date.now()}`,
         status: 'PENDING'
       }
     })

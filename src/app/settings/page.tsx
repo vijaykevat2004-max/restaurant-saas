@@ -21,8 +21,8 @@ export default function SettingsPage() {
     logo: ''
   })
   
-  const [paymentLink, setPaymentLink] = useState('')
-  const [paymentInstructions, setPaymentInstructions] = useState('')
+  const [upiId, setUpiId] = useState('')
+  const [paymentMode, setPaymentMode] = useState<'UPI' | 'BANK_TRANSFER' | 'OTHER'>('UPI')
 
 
   useEffect(() => {
@@ -45,8 +45,8 @@ export default function SettingsPage() {
           logo: menuData.restaurant.logo || ''
         })
         setLogoPreview(menuData.restaurant.logo || null)
-        setPaymentLink(menuData.restaurant.paymentLink || '')
-        setPaymentInstructions(menuData.restaurant.paymentInstructions || '')
+        setUpiId(menuData.restaurant.upiId || '')
+        setPaymentMode(menuData.restaurant.paymentMode || 'UPI')
       }
     } catch (e) {
       console.error(e)
@@ -129,8 +129,8 @@ export default function SettingsPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          paymentLink,
-          paymentInstructions
+          upiId,
+          paymentMode
         })
       })
       
@@ -267,29 +267,33 @@ export default function SettingsPage() {
 
         <div style={{background: 'white', borderRadius: 16, padding: 20, marginBottom: 16, boxShadow: '0 2px 8px rgba(0,0,0,0.05)'}}>
           <h2 style={{fontSize: 16, fontWeight: 'bold', marginBottom: 4}}>💳 Payment Settings</h2>
-          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Tell customers how to pay you</p>
+          <p style={{color: '#888', fontSize: 13, marginBottom: 16}}>Tell customers your UPI ID for payments</p>
           
           <div style={{background: '#e8f5e9', borderRadius: 10, padding: 16, marginBottom: 16}}>
-            <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>🏦 Your Own Payment Method</p>
-            <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 12}}>Add your payment link (UPI, bank transfer, payment page, WhatsApp, etc.)</p>
+            <p style={{fontWeight: 'bold', color: '#2e7d32', marginBottom: 10, fontSize: 14}}>🏦 UPI Payment</p>
+            <p style={{fontSize: 12, color: '#2e7d32', marginBottom: 12}}>Customers will pay via UPI and click "I've Paid" to confirm</p>
             
             <div style={{marginBottom: 12}}>
-              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Payment Link / UPI ID / PhonePe / GPay</label>
-              <input value={paymentLink} onChange={(e) => setPaymentLink(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="https://upipay.io/abc or yourname@ybl or https://wa.me/..." />
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>UPI ID (e.g., yourname@ybl)</label>
+              <input value={upiId} onChange={(e) => setUpiId(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}} placeholder="yourname@ybl" />
             </div>
             
             <div style={{marginBottom: 12}}>
-              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Payment Instructions (for customers)</label>
-              <textarea value={paymentInstructions} onChange={(e) => setPaymentInstructions(e.target.value)} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box', minHeight: 80}} placeholder="e.g., Pay via UPI to 9876543210@upi or click the link above" />
+              <label style={{display: 'block', marginBottom: 4, fontWeight: 'bold', color: '#2e7d32', fontSize: 13}}>Payment Mode</label>
+              <select value={paymentMode} onChange={(e) => setPaymentMode(e.target.value as 'UPI' | 'BANK_TRANSFER' | 'OTHER')} style={{width: '100%', padding: 12, border: '1px solid #22c55e', borderRadius: 10, fontSize: 14, background: 'white', boxSizing: 'border-box'}}>
+                <option value="UPI">UPI</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="OTHER">Other</option>
+              </select>
             </div>
             
             <div style={{background: '#c8e6c9', borderRadius: 8, padding: 12}}>
-              <p style={{fontSize: 11, color: '#2e7d32', marginBottom: 6}}><strong>Examples:</strong></p>
+              <p style={{fontSize: 11, color: '#2e7d32', marginBottom: 6}}><strong>Common UPI IDs:</strong></p>
               <ul style={{fontSize: 11, color: '#2e7d32', margin: 0, paddingLeft: 16, lineHeight: 1.6}}>
-                <li>UPI: <code>yourname@ybl</code></li>
-                <li>PhonePe: <code>https://phonepe.com/pay/yourname</code></li>
-                <li>WhatsApp: <code>https://wa.me/919876543210?text=...</code></li>
-                <li>Payment Page: <code>https://razorpay.com/pay/yourid</code></li>
+                <li>yourname@ybl (Yes Bank)</li>
+                <li>yourname@oksbi (SBI)</li>
+                <li>yourname@paytm</li>
+                <li>yourname@phonepe</li>
               </ul>
             </div>
           </div>

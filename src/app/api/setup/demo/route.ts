@@ -21,8 +21,8 @@ export async function POST(req: NextRequest) {
         slug,
         description: 'A sample restaurant for testing',
         phone: phone || null,
-        paymentLink: body.paymentLink || 'https://upi.me/pay/demo@upi',
-        paymentInstructions: 'Pay via any UPI app to complete your order',
+        upiId: 'demo@upi',
+        paymentMode: 'UPI',
       }
     })
 

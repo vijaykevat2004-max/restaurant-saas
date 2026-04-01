@@ -39,12 +39,13 @@ function PaymentContent() {
   }
 
   const handlePay = () => {
-    if (!restaurant.paymentLink) {
+    if (!restaurant.upiId) {
       alert('Restaurant has not set up payment link yet')
       return
     }
     
-    window.open(restaurant.paymentLink, '_blank')
+    const upiUrl = `upi://pay?pa=${restaurant.upiId}&pn=Restaurant&cu=INR`
+    window.open(upiUrl, '_blank')
   }
 
   const handleVerifyPayment = async () => {
@@ -155,7 +156,7 @@ function PaymentContent() {
             Click below to pay using restaurant's payment method
           </p>
           
-          {restaurant.paymentLink ? (
+          {restaurant.upiId ? (
             <>
               <button 
                 onClick={handlePay}
@@ -165,19 +166,13 @@ function PaymentContent() {
                   border: 'none', cursor: 'pointer', marginBottom: 16
                 }}
               >
-                📲 Go to Payment
+                📲 Pay via UPI
               </button>
               
-              {restaurant.paymentInstructions && (
-                <div style={{ background: '#fff3e0', borderRadius: 10, padding: 14, marginBottom: 16, textAlign: 'left' }}>
-                  <p style={{ fontSize: 13, fontWeight: 'bold', color: '#e65100', marginBottom: 8 }}>📋 Payment Instructions:</p>
-                  <p style={{ fontSize: 13, color: '#333', whiteSpace: 'pre-wrap' }}>{restaurant.paymentInstructions}</p>
-                </div>
-              )}
-              
               <div style={{ background: '#e3f2fd', borderRadius: 10, padding: 12, marginBottom: 16 }}>
-                <p style={{ fontSize: 14, fontWeight: 'bold', color: '#1565c0', marginBottom: 4 }}>Payment Link:</p>
-                <p style={{ fontSize: 12, color: '#0d47a1', wordBreak: 'break-all' }}>{restaurant.paymentLink}</p>
+                <p style={{ fontSize: 14, fontWeight: 'bold', color: '#1565c0', marginBottom: 4 }}>UPI ID:</p>
+                <p style={{ fontSize: 16, color: '#0d47a1', fontWeight: 'bold', wordBreak: 'break-all' }}>{restaurant.upiId}</p>
+                <p style={{ fontSize: 12, color: '#1565c0', marginTop: 8 }}>Pay using any UPI app (PhonePe, GPay, Paytm, etc.)</p>
               </div>
             </>
           ) : (
@@ -189,11 +184,11 @@ function PaymentContent() {
           
           <button 
             onClick={handleVerifyPayment}
-            disabled={verifying || !restaurant.paymentLink}
+            disabled={verifying || !restaurant.upiId}
             style={{ 
-              width: '100%', padding: 16, background: restaurant.paymentLink ? '#25D366' : '#ccc', 
+              width: '100%', padding: 16, background: restaurant.upiId ? '#25D366' : '#ccc', 
               color: 'white', borderRadius: 12, fontSize: 16, fontWeight: 'bold', 
-              border: 'none', cursor: restaurant.paymentLink ? 'pointer' : 'not-allowed'
+              border: 'none', cursor: restaurant.upiId ? 'pointer' : 'not-allowed'
             }}
           >
             {verifying ? '⏳ Verifying...' : '✓ I Have Paid'}
